@@ -1,6 +1,10 @@
 package routes_test
 
 import (
+	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,14 +13,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const stubSecret = "some-line-channel-secret"
+
 func Test_POSTCallback(t *testing.T) {
 	tcs := []struct {
-		name       string
-		statusCode int
+		name                string
+		hasReqHead          bool
+		hasInvalidSignature bool
+		reqBody             []byte
+		statusCode          int
 	}{
 		{
 			name:       "Returns 200",
+			hasReqHead: true,
+			// TODO
+			reqBody:    []byte(`{"foo":"bar"}`),
 			statusCode: 200,
+		},
+		{
+			name:       "Returns 400 when the request is missing body",
+			hasReqHead: true,
+			statusCode: 400,
+		},
+		{
+			name:       "Returns 401 when the request is missing signature header",
+			reqBody:    []byte(`{"foo":"bar"}`),
+			statusCode: 401,
+		},
+		{
+			name:                "Returns 401 when the request is not authorized",
+			hasReqHead:          true,
+			hasInvalidSignature: true,
+			// TODO
+			reqBody:    []byte(`{"foo":"bar"}`),
+			statusCode: 401,
 		},
 	}
 
@@ -24,9 +54,17 @@ func Test_POSTCallback(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			suite := newTestSuite()
+			suite := newTestSuite(stubSecret)
 			rr := httptest.NewRecorder()
-			req, _ := http.NewRequest(http.MethodPost, "/api/v1/callback", nil)
+			req, _ := http.NewRequest(http.MethodPost, "/api/v1/callback", bytes.NewBuffer(tc.reqBody))
+			if tc.hasReqHead && len(tc.reqBody) > 0 {
+				s := generateSignature(stubSecret, tc.reqBody)
+				if tc.hasInvalidSignature {
+					s = generateSignature("some-invalid-line-channel-secret", tc.reqBody)
+				}
+
+				req.Header.Add("x-line-signature", s)
+			}
 
 			suite.Router.ServeHTTP(rr, req)
 
@@ -35,18 +73,27 @@ func Test_POSTCallback(t *testing.T) {
 	}
 }
 
+func init() {
+	gin.SetMode(gin.TestMode)
+}
+
 type testSuite struct {
 	Router *gin.Engine
 }
 
-func newTestSuite() *testSuite {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	routes.AddRoutes(r)
+func newTestSuite(s string) *testSuite {
+	r := gin.New()
+	routes.AddRoutes(r, s)
 
 	return &testSuite{
 		Router: r,
 	}
+}
+
+func generateSignature(secret string, body []byte) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func assertHttpStatus(t *testing.T) func(rr *httptest.ResponseRecorder, want int) {
