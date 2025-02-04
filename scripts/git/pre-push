@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+echo "Running pre-push checks..."
+
+# Run all unit tests with race condition detection
+go test -race ./...
+
+# Run static analysis
+./bin/golangci-lint run
+
+echo "Pre-push checks passed!"
