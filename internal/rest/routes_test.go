@@ -26,8 +26,7 @@ func Test_POSTCallback(t *testing.T) {
 		{
 			name:       "Returns 200",
 			hasReqHead: true,
-			// TODO
-			reqBody:    []byte(`{"foo":"bar"}`),
+			reqBody:    []byte(`{"events":[]}`),
 			statusCode: 200,
 		},
 		{
@@ -44,9 +43,8 @@ func Test_POSTCallback(t *testing.T) {
 			name:                "Returns 401 when the request is not authorized",
 			hasReqHead:          true,
 			hasInvalidSignature: true,
-			// TODO
-			reqBody:    []byte(`{"foo":"bar"}`),
-			statusCode: 401,
+			reqBody:             []byte(`{"events":[]}`),
+			statusCode:          401,
 		},
 	}
 
