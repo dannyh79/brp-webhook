@@ -5,6 +5,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,7 +17,26 @@ import (
 
 const stubSecret = "some-line-channel-secret"
 
+var textMessageEvent = routes.MessageEvent{
+	Event: routes.Event{
+		Type: "message",
+		Source: routes.Source{
+			Type:    "user",
+			GroupId: "C1234f49365c6b492b337189e3343a9d9",
+			UserId:  "U123425e31582f9bdc77b386c1d02477e",
+		},
+	},
+	Message: routes.MessageEventBody{
+		Type:       "text",
+		Text:       routes.RegisterMyGroupMsg,
+		ReplyToken: "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA",
+	},
+}
+
 func Test_POSTCallback(t *testing.T) {
+	textMessageEventString, _ := json.Marshal(textMessageEvent)
+	fmt.Printf(`{"events":[%s]}`, textMessageEventString)
+
 	tcs := []struct {
 		name                string
 		hasReqHead          bool
@@ -27,6 +48,12 @@ func Test_POSTCallback(t *testing.T) {
 			name:       "Returns 200",
 			hasReqHead: true,
 			reqBody:    []byte(`{"events":[]}`),
+			statusCode: 200,
+		},
+		{
+			name:       "Returns 200 when there is a text message event",
+			hasReqHead: true,
+			reqBody:    []byte(fmt.Sprintf(`{"events":[%s]}`, textMessageEventString)),
 			statusCode: 200,
 		},
 		{
