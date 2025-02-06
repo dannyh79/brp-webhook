@@ -11,9 +11,10 @@ if [ -z "$STAGED_GO_FILES" ]; then
 fi
 
 echo "$STAGED_GO_FILES" | xargs -r gofmt -s -w
-echo "$STAGED_GO_FILES" | xargs -r git add
 
 echo "$STAGED_GO_FILES" | xargs -r -I {} dirname {} | sort -u | xargs -r ./bin/golangci-lint run --fix
+
+echo "$STAGED_GO_FILES" | xargs -r git add
 
 go test ./...
 
