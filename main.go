@@ -15,8 +15,11 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	secret := os.Getenv("LINE_CHANNEL_SECRET")
-	endpoint := os.Getenv("D1_GROUP_QUERY_ENDPOINT")
+	secret, foundSecret := os.LookupEnv("LINE_CHANNEL_SECRET")
+	endpoint, foundEndpoint := os.LookupEnv("D1_GROUP_QUERY_ENDPOINT")
+	if !foundSecret || !foundEndpoint {
+		panic("Expect env LINE_CHANNEL_SECRET and D1_GROUP_QUERY_ENDPOINT but not found")
+	}
 
 	repo := repositories.NewD1GroupRepository(endpoint, &http.Client{})
 	service := services.NewRegistrationService(repo)
