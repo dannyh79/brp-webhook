@@ -11,7 +11,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/dannyh79/brp-webhook/internal/groups"
 	routes "github.com/dannyh79/brp-webhook/internal/rest"
+	"github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -106,9 +108,17 @@ type testSuite struct {
 	Router *gin.Engine
 }
 
-func newTestSuite(s string) *testSuite {
+type stubGroupRepo struct{}
+
+func (r *stubGroupRepo) Save(g *groups.Group) (*groups.Group, error) {
+	return g, nil
+}
+
+func newTestSuite(cs string) *testSuite {
 	r := gin.New()
-	routes.AddRoutes(r, s)
+
+	s := services.NewRegistrationService(&stubGroupRepo{})
+	routes.AddRoutes(r, cs, s)
 
 	return &testSuite{
 		Router: r,

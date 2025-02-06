@@ -15,9 +15,9 @@ import (
 
 type channelSecret = string
 
-func AddRoutes(r *gin.Engine, s channelSecret) {
-	r.Use(lineAuthMiddleware(s))
-	r.POST("/api/v1/callback", lineCallbackHandler)
+func AddRoutes(r *gin.Engine, cs channelSecret, s *services.RegistrationService) {
+	r.Use(lineAuthMiddleware(cs))
+	r.POST("/api/v1/callback", lineCallbackHandler(s))
 }
 
 func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
@@ -50,32 +50,27 @@ func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-type stubGroupRepo struct{}
+func lineCallbackHandler(s *services.RegistrationService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		defer ctx.Request.Body.Close()
 
-func (r *stubGroupRepo) Save(g *groups.Group) (*groups.Group, error) {
-	return g, nil
-}
+		body, err := io.ReadAll(ctx.Request.Body)
+		if err == nil {
+			var b LineCallbackBody
+			if err := json.Unmarshal(body, &b); err != nil {
+				fmt.Printf("Error in unmarshalling request body: %v", err)
+			}
 
-func lineCallbackHandler(ctx *gin.Context) {
-	defer ctx.Request.Body.Close()
-
-	body, err := io.ReadAll(ctx.Request.Body)
-	if err == nil {
-		var b LineCallbackBody
-		if err := json.Unmarshal(body, &b); err != nil {
-			fmt.Printf("Error in unmarshalling request body: %v", err)
-		}
-
-		for _, e := range b.Events {
-			if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg {
-				g := groups.NewGroup(e.Source.GroupId)
-				s := services.NewRegistrationService(&stubGroupRepo{})
-				if err := s.Execute(g); err != nil {
-					fmt.Printf("Error in registering group: %v", err)
+			for _, e := range b.Events {
+				if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg {
+					g := groups.NewGroup(e.Source.GroupId)
+					if err := s.Execute(g); err != nil {
+						fmt.Printf("Error in registering group: %v", err)
+					}
 				}
 			}
 		}
-	}
 
-	ctx.Status(200)
+		ctx.Status(200)
+	}
 }
