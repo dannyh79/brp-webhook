@@ -2,6 +2,7 @@ package repositories_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"testing"
@@ -9,6 +10,35 @@ import (
 	"github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/repositories"
 )
+
+func TestSaveGroupParams_MarshalJSON(t *testing.T) {
+	tcs := []struct {
+		name           string
+		input          repositories.SaveGroupParams
+		expectedOutput string
+	}{
+		{
+			name:           "Marshals to JSON",
+			input:          repositories.SaveGroupParams{Id: "C1234f49365c6b492b337189e3343a9d9"},
+			expectedOutput: `{"id":"C1234f49365c6b492b337189e3343a9d9"}`,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			marshaledData, err := json.Marshal(tc.input)
+			if err != nil {
+				t.Fatalf("Failed to marshal JSON: %v", err)
+			}
+
+			jsonString := string(marshaledData)
+
+			if jsonString != tc.expectedOutput {
+				t.Errorf("Expected JSON %s, but got %s", tc.expectedOutput, jsonString)
+			}
+		})
+	}
+}
 
 func TestD1GroupRepository_Save(t *testing.T) {
 	testCases := []struct {

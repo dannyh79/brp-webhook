@@ -11,13 +11,18 @@ import (
 
 type endpoint = string
 
+type SaveGroupParams struct {
+	Id string `json:"id"`
+}
+
 type D1GroupRepository struct {
 	endpoint
 	client *http.Client
 }
 
 func (r *D1GroupRepository) Save(g *groups.Group) (*groups.Group, error) {
-	data, err := json.Marshal(g)
+	p := SaveGroupParams{Id: g.Id}
+	data, err := json.Marshal(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal Group: %w", err)
 	}
