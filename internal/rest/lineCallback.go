@@ -86,6 +86,7 @@ func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 			case nil:
 				registered = append(registered, g)
 			case s.ErrorGroupAlreadyRegistered:
+				g.WasRegistered = true
 				registered = append(registered, g)
 			default:
 				fmt.Printf("Error in registering group: %v", err)
