@@ -27,5 +27,5 @@ type GroupDto struct {
 }
 
 func NewGroupDto(g *g.Group, t ReplyToken) *GroupDto {
-	return &GroupDto{Group: g}
+	return &GroupDto{Group: g, ReplyToken: t}
 }
