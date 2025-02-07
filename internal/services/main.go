@@ -1,19 +1,30 @@
 package services
 
-import "github.com/dannyh79/brp-webhook/internal/groups"
+import g "github.com/dannyh79/brp-webhook/internal/groups"
 
 type Service[T any] interface {
 	Execute(*T) error
 }
 
 type ServiceContext struct {
-	RegistrationService Service[groups.Group]
+	RegistrationService Service[g.Group]
 	ReplyService        Service[string]
 }
 
-func NewServiceContext(regS Service[groups.Group], replyS Service[string]) *ServiceContext {
+func NewServiceContext(regS Service[g.Group], replyS Service[string]) *ServiceContext {
 	return &ServiceContext{
 		RegistrationService: regS,
 		ReplyService:        replyS,
 	}
+}
+
+type ReplyToken = string
+
+type GroupDto struct {
+	*g.Group
+	ReplyToken
+}
+
+func NewGroupDto(g *g.Group, t ReplyToken) *GroupDto {
+	return &GroupDto{Group: g}
 }

@@ -43,11 +43,6 @@ type LeaveEvent struct {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-type groupDto struct {
-	*g.Group
-	ReplyToken string
-}
-
 func LineMsgEventsHandler(ctx *gin.Context) {
 	defer ctx.Request.Body.Close()
 
@@ -58,10 +53,11 @@ func LineMsgEventsHandler(ctx *gin.Context) {
 		return
 	}
 
-	var gs []*groupDto
+	var gs []*s.GroupDto
 	for _, e := range b.Events {
 		if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.Message.ReplyToken) > 0 {
-			gs = append(gs, &groupDto{Group: g.NewGroup(e.Source.GroupId), ReplyToken: e.Message.ReplyToken})
+			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.Message.ReplyToken)
+			gs = append(gs, g)
 		}
 	}
 
@@ -78,13 +74,13 @@ func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 			return
 		}
 
-		gs, ok := gsIf.([]*groupDto)
+		gs, ok := gsIf.([]*s.GroupDto)
 		if !ok {
 			ctx.Next()
 			return
 		}
 
-		var registered []*groupDto
+		var registered []*s.GroupDto
 		for _, g := range gs {
 			switch err := sCtx.RegistrationService.Execute(g.Group); err {
 			case nil:
@@ -110,7 +106,7 @@ func LineReplyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 			return
 		}
 
-		gs, ok := gsIf.([]*groupDto)
+		gs, ok := gsIf.([]*s.GroupDto)
 		if !ok {
 			ctx.Next()
 			return
