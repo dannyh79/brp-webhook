@@ -37,11 +37,11 @@ func main() {
 	}
 
 	repo := repositories.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, &http.Client{})
-	service := services.NewRegistrationService(repo)
+	sCtx := services.NewServiceContext(services.NewRegistrationService(repo))
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	routes.AddRoutes(router, cfg.LineChannelSecret, service)
+	routes.AddRoutes(router, cfg.LineChannelSecret, sCtx)
 	err = router.Run(fmt.Sprintf(":%v", cfg.Port))
 	if err != nil {
 		log.Fatalf("Error in starting the app: %v", err)

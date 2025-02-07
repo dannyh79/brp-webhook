@@ -15,9 +15,9 @@ import (
 
 type channelSecret = string
 
-func AddRoutes(r *gin.Engine, cs channelSecret, s *services.RegistrationService) {
+func AddRoutes(r *gin.Engine, cs channelSecret, sCtx *services.ServiceContext) {
 	r.Use(lineAuthMiddleware(cs))
-	r.POST("/api/v1/callback", msgEventsHandler(s), successHandler)
+	r.POST("/api/v1/callback", msgEventsHandler(sCtx), successHandler)
 }
 
 func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
@@ -50,7 +50,7 @@ func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-func msgEventsHandler(s *services.RegistrationService) gin.HandlerFunc {
+func msgEventsHandler(sCtx *services.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer ctx.Request.Body.Close()
 
@@ -64,7 +64,7 @@ func msgEventsHandler(s *services.RegistrationService) gin.HandlerFunc {
 			for _, e := range b.Events {
 				if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.Message.ReplyToken) > 0 {
 					g := groups.NewGroup(e.Source.GroupId)
-					if err := s.Execute(g); err != nil {
+					if err := sCtx.RegistrationService.Execute(g); err != nil {
 						fmt.Printf("Error in registering group: %v", err)
 					}
 				}
