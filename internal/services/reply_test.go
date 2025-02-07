@@ -38,7 +38,7 @@ func Test_ReplyService(t *testing.T) {
 
 			mockClient := u.NewMockHttpClient(tc.mockRespStatusCode)
 			s := services.NewReplyService(stubChannelToken, mockClient)
-			err := s.Execute(tc.replyToken)
+			err := s.Execute(&tc.replyToken)
 
 			if tc.expectError {
 				assert.Error(t, err, "Expected an error but got none")
