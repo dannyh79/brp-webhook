@@ -8,9 +8,9 @@ import (
 func AddRoutes(r *gin.Engine, cs channelSecret, sCtx *s.ServiceContext) {
 	r.Use(LineAuthMiddleware(cs))
 	r.POST("/api/v1/callback",
-		msgEventsHandler,
-		groupRegistrationHandler(sCtx),
-		replyHandler(sCtx),
+		LineMsgEventsHandler,
+		LineGroupRegistrationHandler(sCtx),
+		LineReplyHandler(sCtx),
 		successHandler,
 	)
 }

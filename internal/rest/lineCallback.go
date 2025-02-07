@@ -48,7 +48,7 @@ type groupDto struct {
 	ReplyToken string
 }
 
-func msgEventsHandler(ctx *gin.Context) {
+func LineMsgEventsHandler(ctx *gin.Context) {
 	defer ctx.Request.Body.Close()
 
 	var b LineCallbackBody
@@ -70,7 +70,7 @@ func msgEventsHandler(ctx *gin.Context) {
 	ctx.Next()
 }
 
-func groupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
+func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		gsIf, exists := ctx.Get("groups")
 		if !exists {
@@ -93,15 +93,15 @@ func groupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 			}
 		}
 
-		ctx.Set("group", registered)
+		ctx.Set("registeredGroups", registered)
 
 		ctx.Next()
 	}
 }
 
-func replyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
+func LineReplyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("groups")
+		gsIf, exists := ctx.Get("registeredGroups")
 		if !exists {
 			ctx.Next()
 			return
@@ -114,7 +114,7 @@ func replyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 		}
 
 		for _, g := range gs {
-			if err := sCtx.ReplyService.Execute(g.ReplyToken); err != nil {
+			if err := sCtx.ReplyService.Execute(&g.ReplyToken); err != nil {
 				fmt.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
 			}
 		}
