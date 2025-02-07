@@ -16,6 +16,7 @@ import (
 )
 
 type config struct {
+	Env                  string `toml:"Env" env:"Env" env-default:"production"`
 	LineChannelSecret    string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
 	D1GroupQueryEndpoint string `toml:"D1_GROUP_QUERY_ENDPOINT" env:"D1_GROUP_QUERY_ENDPOINT"`
 	Port                 int16  `toml:"PORT" env:"PORT" env-default:"8080"`
@@ -29,7 +30,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	errs := validateConfig(cfg)
+	errs := validateConfig(cfg, cfg.Env == "development")
 	if len(errs) > 0 {
 		log.Println(strings.Join(errs, "\n"))
 		os.Exit(2)
@@ -49,7 +50,7 @@ func main() {
 
 type errorMsg = string
 
-func validateConfig(cfg config) []errorMsg {
+func validateConfig(cfg config, printEnv bool) []errorMsg {
 	v := reflect.ValueOf(cfg)
 	t := reflect.TypeOf(cfg)
 
@@ -62,7 +63,7 @@ func validateConfig(cfg config) []errorMsg {
 			errs = append(errs, fmt.Sprintf("Missing value for %s", k))
 		} else if v.IsZero() {
 			errs = append(errs, fmt.Sprintf("Missing value for %s", k))
-		} else {
+		} else if printEnv {
 			log.Printf("%v: %v", k, v)
 		}
 	}
