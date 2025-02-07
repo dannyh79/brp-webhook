@@ -12,6 +12,9 @@ asdf install
 
 make pre-flight
 
+cp config.toml.example config.toml
+# Then update the values in config.toml to your needs
+
 # Start server; this exposes endpoints like POST localhost:8080/api/v1/callback
-LINE_CHANNEL_SECRET="some-line-channel-secret" D1_GROUP_QUERY_ENDPOINT="http://example.com/api/v1/groups" make
+make
 ```

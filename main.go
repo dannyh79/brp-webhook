@@ -2,31 +2,70 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"reflect"
+	"strings"
 
 	"github.com/dannyh79/brp-webhook/internal/repositories"
 	routes "github.com/dannyh79/brp-webhook/internal/rest"
 	"github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/gin-gonic/gin"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
-func main() {
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
+type config struct {
+	LineChannelSecret    string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
+	D1GroupQueryEndpoint string `toml:"D1_GROUP_QUERY_ENDPOINT" env:"D1_GROUP_QUERY_ENDPOINT"`
+	Port                 int16  `toml:"PORT" env:"PORT" env-default:"8080"`
+}
 
-	secret, foundSecret := os.LookupEnv("LINE_CHANNEL_SECRET")
-	endpoint, foundEndpoint := os.LookupEnv("D1_GROUP_QUERY_ENDPOINT")
-	if !foundSecret || !foundEndpoint {
-		panic("Expect env LINE_CHANNEL_SECRET and D1_GROUP_QUERY_ENDPOINT but not found")
+func main() {
+	var cfg config
+	err := cleanenv.ReadConfig("config.toml", &cfg)
+	if err != nil {
+		log.Println(err)
+		os.Exit(2)
 	}
 
-	repo := repositories.NewD1GroupRepository(endpoint, &http.Client{})
+	errs := validateConfig(cfg)
+	if len(errs) > 0 {
+		log.Println(strings.Join(errs, "\n"))
+		os.Exit(2)
+	}
+
+	repo := repositories.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, &http.Client{})
 	service := services.NewRegistrationService(repo)
 
-	routes.AddRoutes(router, secret, service)
-	err := router.Run()
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.Default()
+	routes.AddRoutes(router, cfg.LineChannelSecret, service)
+	err = router.Run(fmt.Sprintf(":%v", cfg.Port))
 	if err != nil {
-		panic(fmt.Sprintf("Error in starting the app: %v", err))
+		log.Fatalf("Error in starting the app: %v", err)
 	}
+}
+
+type errorMsg = string
+
+func validateConfig(cfg config) []errorMsg {
+	v := reflect.ValueOf(cfg)
+	t := reflect.TypeOf(cfg)
+
+	var errs []string
+	for i := 0; i < v.NumField(); i++ {
+		k := t.Field(i).Name
+		v := v.Field(i)
+
+		if v.Kind() == reflect.String && v.String() == "" {
+			errs = append(errs, fmt.Sprintf("Missing value for %s", k))
+		} else if v.IsZero() {
+			errs = append(errs, fmt.Sprintf("Missing value for %s", k))
+		} else {
+			log.Printf("%v: %v", k, v)
+		}
+	}
+
+	return errs
 }

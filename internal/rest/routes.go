@@ -62,7 +62,7 @@ func lineCallbackHandler(s *services.RegistrationService) gin.HandlerFunc {
 			}
 
 			for _, e := range b.Events {
-				if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg {
+				if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.Message.ReplyToken) > 0 {
 					g := groups.NewGroup(e.Source.GroupId)
 					if err := s.Execute(g); err != nil {
 						fmt.Printf("Error in registering group: %v", err)

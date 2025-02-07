@@ -1,0 +1,3 @@
+LINE_CHANNEL_SECRET="some-secret"
+D1_GROUP_QUERY_ENDPOINT="http://example.com/api/v1/groups"
+PORT=8080
