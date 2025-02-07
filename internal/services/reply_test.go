@@ -1,12 +1,11 @@
 package services_test
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 	"testing"
 
 	"github.com/dannyh79/brp-webhook/internal/services"
+	u "github.com/dannyh79/brp-webhook/internal/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,10 +36,7 @@ func Test_ReplyService(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockClient := &http.Client{
-				Transport: &mockHTTPTransport{statusCode: tc.mockRespStatusCode},
-			}
-
+			mockClient := u.NewMockHttpClient(tc.mockRespStatusCode)
 			s := services.NewReplyService(stubChannelToken, mockClient)
 			err := s.Execute(tc.replyToken)
 
@@ -51,16 +47,4 @@ func Test_ReplyService(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockHTTPTransport struct {
-	statusCode int
-}
-
-func (m *mockHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: m.statusCode,
-		Body:       io.NopCloser(bytes.NewBufferString("{}")),
-		Header:     make(http.Header),
-	}, nil
 }

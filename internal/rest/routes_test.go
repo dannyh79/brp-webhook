@@ -14,6 +14,7 @@ import (
 	"github.com/dannyh79/brp-webhook/internal/groups"
 	routes "github.com/dannyh79/brp-webhook/internal/rest"
 	"github.com/dannyh79/brp-webhook/internal/services"
+	u "github.com/dannyh79/brp-webhook/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -119,10 +120,10 @@ func (r *stubGroupRepo) Save(g *groups.Group) (*groups.Group, error) {
 func newTestSuite(cs string) *testSuite {
 	r := gin.New()
 
+	hc := u.NewMockHttpClient(200)
 	sCtx := services.NewServiceContext(
 		services.NewRegistrationService(&stubGroupRepo{}),
-		// FIXME: use mock HTTP client
-		services.NewReplyService(stubChannelToken, &http.Client{}),
+		services.NewReplyService(stubChannelToken, hc),
 	)
 	routes.AddRoutes(r, cs, sCtx)
 

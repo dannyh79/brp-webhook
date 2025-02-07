@@ -1,14 +1,13 @@
 package repositories_test
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 
 	"github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/repositories"
+	u "github.com/dannyh79/brp-webhook/internal/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,10 +56,7 @@ func TestD1GroupRepository_Save(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockClient := &http.Client{
-				Transport: &mockHTTPTransport{statusCode: tc.statusCode},
-			}
-
+			mockClient := u.NewMockHttpClient(tc.statusCode)
 			repo := repositories.NewD1GroupRepository("https://example.com/api/v1/groups", mockClient)
 
 			group := &groups.Group{Id: "C1234f49365c6b492b337189e3343a9d9"}
@@ -76,16 +72,4 @@ func TestD1GroupRepository_Save(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockHTTPTransport struct {
-	statusCode int
-}
-
-func (m *mockHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: m.statusCode,
-		Body:       io.NopCloser(bytes.NewBufferString("{}")),
-		Header:     make(http.Header),
-	}, nil
 }
