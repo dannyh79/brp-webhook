@@ -1,14 +1,14 @@
 package repositories_test
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/repositories"
+	u "github.com/dannyh79/brp-webhook/internal/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,24 +43,22 @@ func TestSaveGroupParams_MarshalJSON(t *testing.T) {
 
 func TestD1GroupRepository_Save(t *testing.T) {
 	testCases := []struct {
-		name        string
-		statusCode  int
-		expectError bool
+		name          string
+		statusCode    int
+		expectError   bool
+		expectedError error
 	}{
-		{"Returns 204 (Success)", http.StatusNoContent, false},
-		{"Returns 304 (Success)", http.StatusNotModified, false},
-		{"Returns 400 (Failure)", http.StatusBadRequest, true},
-		{"Returns 500 (Failure)", http.StatusInternalServerError, true},
+		{"Returns 204 (Success)", http.StatusNoContent, false, nil},
+		{"Returns 304 (Success)", http.StatusNotModified, true, repositories.ErrorAlreadyExists},
+		{"Returns 400 (Failure)", http.StatusBadRequest, true, fmt.Errorf("unexpected response status: %d", http.StatusBadRequest)},
+		{"Returns 500 (Failure)", http.StatusInternalServerError, true, fmt.Errorf("unexpected response status: %d", http.StatusInternalServerError)},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockClient := &http.Client{
-				Transport: &mockHTTPTransport{statusCode: tc.statusCode},
-			}
-
+			mockClient := u.NewMockHttpClient(tc.statusCode)
 			repo := repositories.NewD1GroupRepository("https://example.com/api/v1/groups", mockClient)
 
 			group := &groups.Group{Id: "C1234f49365c6b492b337189e3343a9d9"}
@@ -69,6 +67,9 @@ func TestD1GroupRepository_Save(t *testing.T) {
 			if tc.expectError {
 				assert.Error(t, err, "Expected an error but got none for status code %d", tc.statusCode)
 				assert.Nil(t, result, "Expected result to be nil on error, but got: %v", result)
+				if tc.statusCode == http.StatusNotModified {
+					assert.Equal(t, err, repositories.ErrorAlreadyExists, "Expected error to be ErrorAlreadyExists but got: %v", err)
+				}
 			} else {
 				assert.NoError(t, err, "Expected no error but got one: %v", err)
 				assert.NotNil(t, result, "Expected result to be non-nil but got nil")
@@ -76,16 +77,4 @@ func TestD1GroupRepository_Save(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockHTTPTransport struct {
-	statusCode int
-}
-
-func (m *mockHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: m.statusCode,
-		Body:       io.NopCloser(bytes.NewBufferString("{}")),
-		Header:     make(http.Header),
-	}, nil
 }

@@ -37,13 +37,15 @@ func (r *D1GroupRepository) Save(g *groups.Group) (*groups.Group, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotModified {
+	switch resp.StatusCode {
+	case http.StatusNoContent:
 		return g, nil
+	case http.StatusNotModified:
+		return nil, ErrorAlreadyExists
+	default:
+		return nil, fmt.Errorf("unexpected response status code: %d", resp.StatusCode)
 	}
-
-	return nil, fmt.Errorf("unexpected response status code: %d", resp.StatusCode)
 }
 
 func NewD1GroupRepository(u endpoint, c *http.Client) *D1GroupRepository {
