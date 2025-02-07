@@ -13,11 +13,7 @@ type RegistrationService struct {
 
 func (s *RegistrationService) Execute(g *g.Group) error {
 	_, err := s.repo.Save(g)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func NewRegistrationService(r r.Repository[g.Group]) Service[g.Group] {
