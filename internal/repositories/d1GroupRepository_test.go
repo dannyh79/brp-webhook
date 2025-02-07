@@ -2,6 +2,7 @@ package repositories_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -42,14 +43,15 @@ func TestSaveGroupParams_MarshalJSON(t *testing.T) {
 
 func TestD1GroupRepository_Save(t *testing.T) {
 	testCases := []struct {
-		name        string
-		statusCode  int
-		expectError bool
+		name          string
+		statusCode    int
+		expectError   bool
+		expectedError error
 	}{
-		{"Returns 204 (Success)", http.StatusNoContent, false},
-		{"Returns 304 (Success)", http.StatusNotModified, false},
-		{"Returns 400 (Failure)", http.StatusBadRequest, true},
-		{"Returns 500 (Failure)", http.StatusInternalServerError, true},
+		{"Returns 204 (Success)", http.StatusNoContent, false, nil},
+		{"Returns 304 (Success)", http.StatusNotModified, true, repositories.ErrorAlreadyExists},
+		{"Returns 400 (Failure)", http.StatusBadRequest, true, fmt.Errorf("unexpected response status: %d", http.StatusBadRequest)},
+		{"Returns 500 (Failure)", http.StatusInternalServerError, true, fmt.Errorf("unexpected response status: %d", http.StatusInternalServerError)},
 	}
 
 	for _, tc := range testCases {
@@ -65,6 +67,9 @@ func TestD1GroupRepository_Save(t *testing.T) {
 			if tc.expectError {
 				assert.Error(t, err, "Expected an error but got none for status code %d", tc.statusCode)
 				assert.Nil(t, result, "Expected result to be nil on error, but got: %v", result)
+				if tc.statusCode == http.StatusNotModified {
+					assert.Equal(t, err, repositories.ErrorAlreadyExists, "Expected error to be ErrorAlreadyExists but got: %v", err)
+				}
 			} else {
 				assert.NoError(t, err, "Expected no error but got one: %v", err)
 				assert.NotNil(t, result, "Expected result to be non-nil but got nil")
