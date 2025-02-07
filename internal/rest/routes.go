@@ -6,7 +6,7 @@ import (
 )
 
 func AddRoutes(r *gin.Engine, cs channelSecret, sCtx *s.ServiceContext) {
-	r.Use(lineAuthMiddleware(cs))
+	r.Use(LineAuthMiddleware(cs))
 	r.POST("/api/v1/callback",
 		msgEventsHandler,
 		groupRegistrationHandler(sCtx),

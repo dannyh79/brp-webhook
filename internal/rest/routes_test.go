@@ -2,9 +2,6 @@ package routes_test
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,7 +13,6 @@ import (
 	"github.com/dannyh79/brp-webhook/internal/services"
 	u "github.com/dannyh79/brp-webhook/internal/testutils"
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 )
 
 const stubSecret = "some-line-channel-secret"
@@ -88,9 +84,9 @@ func Test_POSTCallback(t *testing.T) {
 			rr := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodPost, "/api/v1/callback", bytes.NewBuffer(tc.reqBody))
 			if tc.hasReqHead && len(tc.reqBody) > 0 {
-				s := generateSignature(stubSecret, tc.reqBody)
+				s := u.GenerateSignature(stubSecret, string(tc.reqBody))
 				if tc.hasInvalidSignature {
-					s = generateSignature("some-invalid-line-channel-secret", tc.reqBody)
+					s = u.GenerateSignature("some-invalid-line-channel-secret", string(tc.reqBody))
 				}
 
 				req.Header.Add("x-line-signature", s)
@@ -98,7 +94,7 @@ func Test_POSTCallback(t *testing.T) {
 
 			suite.Router.ServeHTTP(rr, req)
 
-			assertHttpStatus(t)(rr, tc.statusCode)
+			u.AssertHttpStatus(t)(rr, tc.statusCode)
 		})
 	}
 }
@@ -129,19 +125,5 @@ func newTestSuite(cs string) *testSuite {
 
 	return &testSuite{
 		Router: r,
-	}
-}
-
-func generateSignature(secret string, body []byte) string {
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write(body)
-	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
-}
-
-func assertHttpStatus(t *testing.T) func(rr *httptest.ResponseRecorder, want int) {
-	return func(rr *httptest.ResponseRecorder, want int) {
-		t.Helper()
-		got := rr.Result().StatusCode
-		assert.Equal(t, got, want, "got HTTP status %v, want %v", got, want)
 	}
 }

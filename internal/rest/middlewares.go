@@ -12,7 +12,7 @@ import (
 
 type channelSecret = string
 
-func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
+func LineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if ctx.Request.Body == nil {
 			ctx.AbortWithStatus(400)
