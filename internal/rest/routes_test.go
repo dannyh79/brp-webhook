@@ -19,6 +19,7 @@ import (
 )
 
 const stubSecret = "some-line-channel-secret"
+const stubChannelToken = "some-line-channel-token"
 
 var textMessageEvent = routes.MessageEvent{
 	Event: routes.Event{
@@ -120,7 +121,8 @@ func newTestSuite(cs string) *testSuite {
 
 	sCtx := services.NewServiceContext(
 		services.NewRegistrationService(&stubGroupRepo{}),
-		services.NewReplyService(),
+		// FIXME: use mock HTTP client
+		services.NewReplyService(stubChannelToken, &http.Client{}),
 	)
 	routes.AddRoutes(r, cs, sCtx)
 

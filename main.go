@@ -16,10 +16,11 @@ import (
 )
 
 type config struct {
-	Env                  string `toml:"Env" env:"Env" env-default:"production"`
-	LineChannelSecret    string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
-	D1GroupQueryEndpoint string `toml:"D1_GROUP_QUERY_ENDPOINT" env:"D1_GROUP_QUERY_ENDPOINT"`
-	Port                 int16  `toml:"PORT" env:"PORT" env-default:"8080"`
+	Env                    string `toml:"Env" env:"Env" env-default:"production"`
+	LineChannelSecret      string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
+	LineChannelAccessToken string `toml:"LINE_CHANNEL_ACCESS_TOKEN" env:"LINE_CHANNEL_ACCESS_TOKEN"`
+	D1GroupQueryEndpoint   string `toml:"D1_GROUP_QUERY_ENDPOINT" env:"D1_GROUP_QUERY_ENDPOINT"`
+	Port                   int16  `toml:"PORT" env:"PORT" env-default:"8080"`
 }
 
 func main() {
@@ -36,10 +37,11 @@ func main() {
 		os.Exit(2)
 	}
 
-	repo := repositories.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, &http.Client{})
+	httpClient := &http.Client{}
+	repo := repositories.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, httpClient)
 	sCtx := services.NewServiceContext(
 		services.NewRegistrationService(repo),
-		services.NewReplyService(),
+		services.NewReplyService(cfg.LineChannelAccessToken, httpClient),
 	)
 
 	gin.SetMode(gin.ReleaseMode)
