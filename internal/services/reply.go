@@ -11,7 +11,10 @@ var _ Service[GroupDto] = (*ReplyService)(nil)
 
 const lineReplyApiEndpoint = "https://api.line.me/v2/bot/message/reply"
 
-type replyMessageRequest struct {
+const msgOk = "已加入推播清單。"
+const msgAlreadyRegistered = "已在加入推播清單中。 :D"
+
+type ReplyMessageRequest struct {
 	ReplyToken string    `json:"replyToken"`
 	Messages   []message `json:"messages"`
 }
@@ -31,10 +34,14 @@ func NewReplyService(token string, client *http.Client) Service[GroupDto] {
 }
 
 func (s *ReplyService) Execute(g *GroupDto) error {
-	p := replyMessageRequest{
+	m := msgOk
+	if g.WasRegistered {
+		m = msgAlreadyRegistered
+	}
+	p := ReplyMessageRequest{
 		ReplyToken: g.ReplyToken,
 		Messages: []message{
-			{Type: "text", Text: "好的"},
+			{Type: "text", Text: m},
 		},
 	}
 

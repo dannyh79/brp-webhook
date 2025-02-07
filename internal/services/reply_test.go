@@ -1,6 +1,8 @@
 package services_test
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"testing"
 
@@ -15,20 +17,31 @@ func Test_ReplyService(t *testing.T) {
 	tcs := []struct {
 		name               string
 		dto                s.GroupDto
+		expectedMsg        string
 		replyToken         string
 		mockRespStatusCode int
 		expectError        bool
 	}{
 		{
-			name:               "Does not return error",
-			dto:                s.GroupDto{ReplyToken: "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA"},
-			replyToken:         "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA",
+			name:               "Replies with MsgOk for new registration",
+			dto:                s.GroupDto{ReplyToken: "test-reply-token", WasRegistered: false},
+			expectedMsg:        "已加入推播清單。",
+			replyToken:         "test-reply-token",
 			mockRespStatusCode: http.StatusOK,
 			expectError:        false,
 		},
 		{
-			name:               "Returns error",
-			replyToken:         "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA",
+			name:               "Replies with MsgAlreadyRegistered for existing registration",
+			dto:                s.GroupDto{ReplyToken: "test-reply-token", WasRegistered: true},
+			expectedMsg:        "已在加入推播清單中。 :D",
+			replyToken:         "test-reply-token",
+			mockRespStatusCode: http.StatusOK,
+			expectError:        false,
+		},
+		{
+			name:               "Returns error on bad request",
+			dto:                s.GroupDto{ReplyToken: "test-reply-token"},
+			replyToken:         "test-reply-token",
 			mockRespStatusCode: http.StatusBadRequest,
 			expectError:        true,
 		},
@@ -38,14 +51,29 @@ func Test_ReplyService(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			mockClient := u.NewMockHttpClient(tc.mockRespStatusCode)
-			s := s.NewReplyService(stubChannelToken, mockClient)
-			err := s.Execute(&tc.dto)
+			var reqBody []byte
+			mockClient := u.NewMockHttpClient(tc.mockRespStatusCode, func(req *http.Request) {
+				b, _ := req.GetBody()
+				reqBody, _ = io.ReadAll(b)
+			})
+
+			svc := s.NewReplyService(stubChannelToken, mockClient)
+			err := svc.Execute(&tc.dto)
 
 			if tc.expectError {
 				assert.Error(t, err, "Expected an error but got none")
 			} else {
 				assert.NoError(t, err, "Expected no error but got one: %v", err)
+
+				var sent s.ReplyMessageRequest
+				err := json.Unmarshal(reqBody, &sent)
+				assert.NoError(t, err, "Failed to unmarshal sent request body")
+
+				assert.Equal(t, sent.ReplyToken, tc.replyToken, "Reply token mismatch")
+
+				assert.Len(t, sent.Messages, 1, "Expected one message object to be sent")
+				assert.Equal(t, "text", sent.Messages[0].Type, `Expected message type to be "text"`)
+				assert.Equal(t, sent.Messages[0].Text, tc.expectedMsg, `Expect "%s", got "%s"`, sent.Messages[0].Text, tc.expectedMsg)
 			}
 		})
 	}
