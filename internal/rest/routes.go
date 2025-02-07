@@ -17,7 +17,11 @@ type channelSecret = string
 
 func AddRoutes(r *gin.Engine, cs channelSecret, sCtx *services.ServiceContext) {
 	r.Use(lineAuthMiddleware(cs))
-	r.POST("/api/v1/callback", msgEventsHandler(sCtx), successHandler)
+	r.POST("/api/v1/callback",
+		msgEventsHandler,
+		groupRegistrationHandler(sCtx),
+		successHandler,
+	)
 }
 
 func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
@@ -50,26 +54,58 @@ func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-func msgEventsHandler(sCtx *services.ServiceContext) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		defer ctx.Request.Body.Close()
+type groupDto struct {
+	*groups.Group
+	ReplyToken string
+}
 
-		body, err := io.ReadAll(ctx.Request.Body)
-		if err == nil {
-			var b LineCallbackBody
-			if err := json.Unmarshal(body, &b); err != nil {
-				fmt.Printf("Error in unmarshalling request body: %v", err)
-			}
+func msgEventsHandler(ctx *gin.Context) {
+	defer ctx.Request.Body.Close()
 
-			for _, e := range b.Events {
-				if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.Message.ReplyToken) > 0 {
-					g := groups.NewGroup(e.Source.GroupId)
-					if err := sCtx.RegistrationService.Execute(g); err != nil {
-						fmt.Printf("Error in registering group: %v", err)
-					}
-				}
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err == nil {
+		var b LineCallbackBody
+		if err := json.Unmarshal(body, &b); err != nil {
+			fmt.Printf("Error in unmarshalling request body: %v", err)
+		}
+
+		var gs []*groupDto
+		for _, e := range b.Events {
+			if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.Message.ReplyToken) > 0 {
+				gs = append(gs, &groupDto{Group: groups.NewGroup(e.Source.GroupId), ReplyToken: e.Message.ReplyToken})
 			}
 		}
+
+		ctx.Set("groups", gs)
+	}
+
+	ctx.Next()
+}
+
+func groupRegistrationHandler(sCtx *services.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		gsIf, exists := ctx.Get("groups")
+		if !exists {
+			ctx.Next()
+			return
+		}
+
+		gs, ok := gsIf.([]*groupDto)
+		if !ok {
+			ctx.Next()
+			return
+		}
+
+		var registered []*groupDto
+		for _, g := range gs {
+			if err := sCtx.RegistrationService.Execute(g.Group); err != nil {
+				fmt.Printf("Error in registering group: %v", err)
+			} else {
+				registered = append(registered, g)
+			}
+		}
+
+		ctx.Set("group", registered)
 
 		ctx.Next()
 	}
