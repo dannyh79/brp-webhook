@@ -18,13 +18,17 @@ import (
 
 type mockRegistrationService struct {
 	shouldFail bool
+	error
 }
 
 func (m *mockRegistrationService) Execute(g *groups.Group) error {
-	if m.shouldFail {
-		return fmt.Errorf("failed to register group")
+	if !m.shouldFail {
+		return nil
 	}
-	return nil
+	if m.error == nil {
+		m.error = fmt.Errorf("failed to register group")
+	}
+	return m.error
 }
 
 type mockReplyService struct {
@@ -62,6 +66,7 @@ func TestLineHandlers(t *testing.T) {
 		requestBody        map[string]interface{}
 		expectStatus       int
 		shouldRegisterFail bool
+		registerFailError  error
 		shouldReplyFail    bool
 		expectedReplies    int
 	}{
@@ -108,6 +113,28 @@ func TestLineHandlers(t *testing.T) {
 			expectedReplies:    0,
 		},
 		{
+			name: "Group registration fails from record already exists",
+			requestBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text":       "請好好靈修每日推播靈修內容到這",
+							"replyToken": "test-reply-token",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+					},
+				},
+			},
+			expectStatus:       http.StatusOK,
+			shouldRegisterFail: true,
+			registerFailError:  services.ErrorGroupAlreadyRegistered,
+			shouldReplyFail:    false,
+			expectedReplies:    1,
+		},
+		{
 			name: "Reply service fails",
 			requestBody: map[string]interface{}{
 				"events": []map[string]interface{}{
@@ -142,7 +169,7 @@ func TestLineHandlers(t *testing.T) {
 
 			replyService := &mockReplyService{shouldFail: tc.shouldReplyFail}
 			sCtx := &services.ServiceContext{
-				RegistrationService: &mockRegistrationService{shouldFail: tc.shouldRegisterFail},
+				RegistrationService: &mockRegistrationService{shouldFail: tc.shouldRegisterFail, error: tc.registerFailError},
 				ReplyService:        replyService,
 			}
 

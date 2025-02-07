@@ -86,10 +86,13 @@ func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 
 		var registered []*groupDto
 		for _, g := range gs {
-			if err := sCtx.RegistrationService.Execute(g.Group); err != nil {
-				fmt.Printf("Error in registering group: %v", err)
-			} else {
+			switch err := sCtx.RegistrationService.Execute(g.Group); err {
+			case nil:
 				registered = append(registered, g)
+			case s.ErrorGroupAlreadyRegistered:
+				registered = append(registered, g)
+			default:
+				fmt.Printf("Error in registering group: %v", err)
 			}
 		}
 
