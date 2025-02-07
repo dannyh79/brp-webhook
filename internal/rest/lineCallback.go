@@ -14,9 +14,10 @@ type LineCallbackBody struct {
 
 // Base event
 type Event struct {
-	Type    string           `json:"type"`
-	Source  Source           `json:"source"`
-	Message MessageEventBody `json:"message"`
+	Type       string           `json:"type"`
+	Source     Source           `json:"source"`
+	Message    MessageEventBody `json:"message"`
+	ReplyToken string           `json:"replyToken"`
 }
 
 type Source struct {
@@ -32,9 +33,8 @@ type MessageEvent struct {
 }
 
 type MessageEventBody struct {
-	Type       string `json:"type"`
-	Text       string `json:"text"`
-	ReplyToken string `json:"replyToken"`
+	Type string `json:"type"`
+	Text string `json:"text"`
 }
 
 type LeaveEvent struct {
@@ -55,8 +55,8 @@ func LineMsgEventsHandler(ctx *gin.Context) {
 
 	var gs []*s.GroupDto
 	for _, e := range b.Events {
-		if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.Message.ReplyToken) > 0 {
-			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.Message.ReplyToken)
+		if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
+			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
 			gs = append(gs, g)
 		}
 	}

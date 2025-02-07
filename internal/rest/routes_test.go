@@ -26,11 +26,11 @@ var textMessageEvent = routes.MessageEvent{
 			GroupId: "C1234f49365c6b492b337189e3343a9d9",
 			UserId:  "U123425e31582f9bdc77b386c1d02477e",
 		},
+		ReplyToken: "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA",
 	},
 	Message: routes.MessageEventBody{
-		Type:       "text",
-		Text:       routes.RegisterMyGroupMsg,
-		ReplyToken: "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA",
+		Type: "text",
+		Text: routes.RegisterMyGroupMsg,
 	},
 }
 

@@ -76,12 +76,12 @@ func TestLineHandlers(t *testing.T) {
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text":       "請好好靈修每日推播靈修內容到這",
-							"replyToken": "test-reply-token",
+							"text": "請好好靈修每日推播靈修內容到這",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
 						},
+						"replyToken": "test-reply-token",
 					},
 				},
 			},
@@ -97,12 +97,12 @@ func TestLineHandlers(t *testing.T) {
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text":       "請好好靈修每日推播靈修內容到這",
-							"replyToken": "test-reply-token",
+							"text": "請好好靈修每日推播靈修內容到這",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
 						},
+						"replyToken": "test-reply-token",
 					},
 				},
 			},
@@ -118,12 +118,12 @@ func TestLineHandlers(t *testing.T) {
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text":       "請好好靈修每日推播靈修內容到這",
-							"replyToken": "test-reply-token",
+							"text": "請好好靈修每日推播靈修內容到這",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
 						},
+						"replyToken": "test-reply-token",
 					},
 				},
 			},
@@ -140,12 +140,12 @@ func TestLineHandlers(t *testing.T) {
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text":       "請好好靈修每日推播靈修內容到這",
-							"replyToken": "test-reply-token",
+							"text": "請好好靈修每日推播靈修內容到這",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
 						},
+						"replyToken": "test-reply-token",
 					},
 				},
 			},
