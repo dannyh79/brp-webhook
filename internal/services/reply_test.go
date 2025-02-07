@@ -69,11 +69,11 @@ func Test_ReplyService(t *testing.T) {
 				err := json.Unmarshal(reqBody, &sent)
 				assert.NoError(t, err, "Failed to unmarshal sent request body")
 
-				assert.Equal(t, sent.ReplyToken, tc.replyToken, "Reply token mismatch")
+				assert.Equal(t, tc.replyToken, sent.ReplyToken, "Reply token mismatch")
 
 				assert.Len(t, sent.Messages, 1, "Expected one message object to be sent")
 				assert.Equal(t, "text", sent.Messages[0].Type, `Expected message type to be "text"`)
-				assert.Equal(t, sent.Messages[0].Text, tc.expectedMsg, `Expect "%s", got "%s"`, sent.Messages[0].Text, tc.expectedMsg)
+				assert.Equal(t, tc.expectedMsg, sent.Messages[0].Text, `Expect "%s", got "%s"`, sent.Messages[0].Text, tc.expectedMsg)
 			}
 		})
 	}

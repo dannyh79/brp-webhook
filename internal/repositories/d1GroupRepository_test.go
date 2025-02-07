@@ -68,12 +68,12 @@ func TestD1GroupRepository_Save(t *testing.T) {
 				assert.Error(t, err, "Expected an error but got none for status code %d", tc.statusCode)
 				assert.Nil(t, result, "Expected result to be nil on error, but got: %v", result)
 				if tc.statusCode == http.StatusNotModified {
-					assert.Equal(t, err, repositories.ErrorAlreadyExists, "Expected error to be ErrorAlreadyExists but got: %v", err)
+					assert.Equal(t, tc.expectedError, err, "Expected error to be ErrorAlreadyExists but got: %v", err)
 				}
 			} else {
 				assert.NoError(t, err, "Expected no error but got one: %v", err)
 				assert.NotNil(t, result, "Expected result to be non-nil but got nil")
-				assert.Equal(t, result.Id, group.Id, "Returned group ID, %s, does not match input group ID %s", result.Id, group.Id)
+				assert.Equal(t, group.Id, result.Id, "Returned group ID, %s, does not match input group ID %s", result.Id, group.Id)
 			}
 		})
 	}

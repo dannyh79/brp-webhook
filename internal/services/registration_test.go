@@ -66,7 +66,7 @@ func Test_RegistrationService(t *testing.T) {
 			if tc.expectError {
 				assert.Error(t, err, "Expected an error but got none")
 				if tc.expectedError != nil {
-					assert.Equal(t, err, tc.expectedError, "Expected error to be %v but got: %v", tc.expectedError, err)
+					assert.Equal(t, tc.expectedError, err, "Expected error to be %v but got: %v", tc.expectedError, err)
 				}
 			} else {
 				assert.NoError(t, err, "Expected no error but got one: %v", err)
