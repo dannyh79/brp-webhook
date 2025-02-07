@@ -17,7 +17,7 @@ type channelSecret = string
 
 func AddRoutes(r *gin.Engine, cs channelSecret, s *services.RegistrationService) {
 	r.Use(lineAuthMiddleware(cs))
-	r.POST("/api/v1/callback", lineCallbackHandler(s))
+	r.POST("/api/v1/callback", msgEventsHandler(s), successHandler)
 }
 
 func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
@@ -50,7 +50,7 @@ func lineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-func lineCallbackHandler(s *services.RegistrationService) gin.HandlerFunc {
+func msgEventsHandler(s *services.RegistrationService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer ctx.Request.Body.Close()
 
@@ -71,6 +71,8 @@ func lineCallbackHandler(s *services.RegistrationService) gin.HandlerFunc {
 			}
 		}
 
-		ctx.Status(200)
+		ctx.Next()
 	}
 }
+
+func successHandler(ctx *gin.Context) { ctx.Status(200) }
