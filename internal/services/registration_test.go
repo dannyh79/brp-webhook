@@ -6,6 +6,7 @@ import (
 
 	"github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/services"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockRepo struct {
@@ -46,13 +47,9 @@ func Test_RegistrationService(t *testing.T) {
 			err := s.Execute(&tc.group)
 
 			if tc.expectError {
-				if err == nil {
-					t.Errorf("expected an error but got none")
-				}
+				assert.Error(t, err, "Expected an error but got none")
 			} else {
-				if err != nil {
-					t.Errorf("expected no error but got one: %v", err)
-				}
+				assert.NoError(t, err, "Expected no error but got one: %v", err)
 			}
 		})
 	}

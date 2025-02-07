@@ -9,6 +9,7 @@ import (
 
 	"github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/repositories"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSaveGroupParams_MarshalJSON(t *testing.T) {
@@ -66,22 +67,12 @@ func TestD1GroupRepository_Save(t *testing.T) {
 			result, err := repo.Save(group)
 
 			if tc.expectError {
-				if err == nil {
-					t.Errorf("Expected an error but got none for status code %d", tc.statusCode)
-				}
-				if result != nil {
-					t.Errorf("Expected result to be nil on error, but got: %v", result)
-				}
+				assert.Error(t, err, "Expected an error but got none for status code %d", tc.statusCode)
+				assert.Nil(t, result, "Expected result to be nil on error, but got: %v", result)
 			} else {
-				if err != nil {
-					t.Errorf("Expected no error but got one: %v", err)
-				}
-				if result == nil {
-					t.Fatal("Expected result to be non-nil but got nil")
-				}
-				if result.Id != group.Id {
-					t.Errorf("Returned group does not match input: got %v, want %v", result, group)
-				}
+				assert.NoError(t, err, "Expected no error but got one: %v", err)
+				assert.NotNil(t, result, "Expected result to be non-nil but got nil")
+				assert.Equal(t, result.Id, group.Id, "Returned group ID, %s, does not match input group ID %s", result.Id, group.Id)
 			}
 		})
 	}

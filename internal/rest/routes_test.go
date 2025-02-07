@@ -15,6 +15,7 @@ import (
 	routes "github.com/dannyh79/brp-webhook/internal/rest"
 	"github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 const stubSecret = "some-line-channel-secret"
@@ -134,8 +135,7 @@ func generateSignature(secret string, body []byte) string {
 func assertHttpStatus(t *testing.T) func(rr *httptest.ResponseRecorder, want int) {
 	return func(rr *httptest.ResponseRecorder, want int) {
 		t.Helper()
-		if got := rr.Result().StatusCode; got != want {
-			t.Errorf("got HTTP status %v, want %v", got, want)
-		}
+		got := rr.Result().StatusCode
+		assert.Equal(t, got, want, "got HTTP status %v, want %v", got, want)
 	}
 }
