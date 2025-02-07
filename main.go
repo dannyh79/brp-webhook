@@ -37,7 +37,10 @@ func main() {
 	}
 
 	repo := repositories.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, &http.Client{})
-	sCtx := services.NewServiceContext(services.NewRegistrationService(repo))
+	sCtx := services.NewServiceContext(
+		services.NewRegistrationService(repo),
+		services.NewReplyService(),
+	)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()

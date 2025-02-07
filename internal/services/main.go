@@ -6,10 +6,12 @@ type Service[T any] interface {
 
 type ServiceContext struct {
 	RegistrationService
+	ReplyService
 }
 
-func NewServiceContext(rs *RegistrationService) *ServiceContext {
+func NewServiceContext(regS *RegistrationService, replyS *ReplyService) *ServiceContext {
 	return &ServiceContext{
-		RegistrationService: *rs,
+		RegistrationService: *regS,
+		ReplyService:        *replyS,
 	}
 }

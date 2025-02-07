@@ -20,6 +20,7 @@ func AddRoutes(r *gin.Engine, cs channelSecret, sCtx *services.ServiceContext) {
 	r.POST("/api/v1/callback",
 		msgEventsHandler,
 		groupRegistrationHandler(sCtx),
+		replyHandler(sCtx),
 		successHandler,
 	)
 }
@@ -106,6 +107,30 @@ func groupRegistrationHandler(sCtx *services.ServiceContext) gin.HandlerFunc {
 		}
 
 		ctx.Set("group", registered)
+
+		ctx.Next()
+	}
+}
+
+func replyHandler(sCtx *services.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		gsIf, exists := ctx.Get("groups")
+		if !exists {
+			ctx.Next()
+			return
+		}
+
+		gs, ok := gsIf.([]*groupDto)
+		if !ok {
+			ctx.Next()
+			return
+		}
+
+		for _, g := range gs {
+			if err := sCtx.ReplyService.Execute(g.ReplyToken); err != nil {
+				fmt.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
+			}
+		}
 
 		ctx.Next()
 	}

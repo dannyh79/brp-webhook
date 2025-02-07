@@ -118,7 +118,10 @@ func (r *stubGroupRepo) Save(g *groups.Group) (*groups.Group, error) {
 func newTestSuite(cs string) *testSuite {
 	r := gin.New()
 
-	sCtx := services.NewServiceContext(services.NewRegistrationService(&stubGroupRepo{}))
+	sCtx := services.NewServiceContext(
+		services.NewRegistrationService(&stubGroupRepo{}),
+		services.NewReplyService(),
+	)
 	routes.AddRoutes(r, cs, sCtx)
 
 	return &testSuite{
