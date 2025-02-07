@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dannyh79/brp-webhook/internal/groups"
-	"github.com/dannyh79/brp-webhook/internal/repositories"
-	"github.com/dannyh79/brp-webhook/internal/services"
+	g "github.com/dannyh79/brp-webhook/internal/groups"
+	r "github.com/dannyh79/brp-webhook/internal/repositories"
+	s "github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ type mockRepo struct {
 	error
 }
 
-func (r *mockRepo) Save(g *groups.Group) (*groups.Group, error) {
+func (r *mockRepo) Save(g *g.Group) (*g.Group, error) {
 	if !r.shouldFail {
 		return g, nil
 	}
@@ -28,7 +28,7 @@ func (r *mockRepo) Save(g *groups.Group) (*groups.Group, error) {
 func Test_RegistrationService(t *testing.T) {
 	tcs := []struct {
 		name              string
-		group             groups.Group
+		dto               s.GroupDto
 		expectRepoError   bool
 		expectedRepoError error
 		expectError       bool
@@ -36,20 +36,20 @@ func Test_RegistrationService(t *testing.T) {
 	}{
 		{
 			name:        "Does not return error",
-			group:       groups.Group{Id: "C12343d7945aa7d4a1f0ab43bc6cfa351"},
+			dto:         s.GroupDto{Group: &g.Group{Id: "C12343d7945aa7d4a1f0ab43bc6cfa351"}},
 			expectError: false,
 		},
 		{
 			name:              "Returns error when group already registered",
-			group:             groups.Group{Id: "C12343d7945aa7d4a1f0ab43bc6cfa351"},
+			dto:               s.GroupDto{Group: &g.Group{Id: "C12343d7945aa7d4a1f0ab43bc6cfa351"}},
 			expectRepoError:   true,
-			expectedRepoError: repositories.ErrorAlreadyExists,
+			expectedRepoError: r.ErrorAlreadyExists,
 			expectError:       true,
-			expectedError:     services.ErrorGroupAlreadyRegistered,
+			expectedError:     s.ErrorGroupAlreadyRegistered,
 		},
 		{
 			name:            "Returns error",
-			group:           groups.Group{Id: "C56781862c40c77487fc60baf98fa7a6a"},
+			dto:             s.GroupDto{Group: &g.Group{Id: "C56781862c40c77487fc60baf98fa7a6a"}},
 			expectRepoError: true,
 			expectError:     true,
 		},
@@ -60,8 +60,8 @@ func Test_RegistrationService(t *testing.T) {
 			t.Parallel()
 
 			r := &mockRepo{shouldFail: tc.expectRepoError, error: tc.expectedRepoError}
-			s := services.NewRegistrationService(r)
-			err := s.Execute(&tc.group)
+			s := s.NewRegistrationService(r)
+			err := s.Execute(&tc.dto)
 
 			if tc.expectError {
 				assert.Error(t, err, "Expected an error but got none")

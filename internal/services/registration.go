@@ -7,21 +7,21 @@ import (
 	r "github.com/dannyh79/brp-webhook/internal/repositories"
 )
 
-var _ Service[g.Group] = (*RegistrationService)(nil)
+var _ Service[GroupDto] = (*RegistrationService)(nil)
 
 type RegistrationService struct {
 	repo r.Repository[g.Group]
 }
 
-func (s *RegistrationService) Execute(g *g.Group) error {
-	_, err := s.repo.Save(g)
+func (s *RegistrationService) Execute(g *GroupDto) error {
+	_, err := s.repo.Save(g.Group)
 	if err == r.ErrorAlreadyExists {
 		return ErrorGroupAlreadyRegistered
 	}
 	return err
 }
 
-func NewRegistrationService(r r.Repository[g.Group]) Service[g.Group] {
+func NewRegistrationService(r r.Repository[g.Group]) Service[GroupDto] {
 	return &RegistrationService{r}
 }
 

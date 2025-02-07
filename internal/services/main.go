@@ -7,11 +7,11 @@ type Service[T any] interface {
 }
 
 type ServiceContext struct {
-	RegistrationService Service[g.Group]
-	ReplyService        Service[string]
+	RegistrationService Service[GroupDto]
+	ReplyService        Service[GroupDto]
 }
 
-func NewServiceContext(regS Service[g.Group], replyS Service[string]) *ServiceContext {
+func NewServiceContext(regS, replyS Service[GroupDto]) *ServiceContext {
 	return &ServiceContext{
 		RegistrationService: regS,
 		ReplyService:        replyS,

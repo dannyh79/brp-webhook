@@ -8,9 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/rest"
-	"github.com/dannyh79/brp-webhook/internal/services"
+	s "github.com/dannyh79/brp-webhook/internal/services"
 	u "github.com/dannyh79/brp-webhook/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ type mockRegistrationService struct {
 	error
 }
 
-func (m *mockRegistrationService) Execute(g *groups.Group) error {
+func (m *mockRegistrationService) Execute(g *s.GroupDto) error {
 	if !m.shouldFail {
 		return nil
 	}
@@ -36,7 +35,7 @@ type mockReplyService struct {
 	calledTimes int
 }
 
-func (m *mockReplyService) Execute(replyToken *string) error {
+func (m *mockReplyService) Execute(g *s.GroupDto) error {
 	m.calledTimes++
 	if m.shouldFail {
 		return fmt.Errorf("failed to send reply")
@@ -48,7 +47,7 @@ func (m *mockReplyService) CalledTimes() int {
 	return m.calledTimes
 }
 
-func setupRouter(sCtx *services.ServiceContext) *gin.Engine {
+func setupRouter(sCtx *s.ServiceContext) *gin.Engine {
 	router := gin.New()
 
 	router.POST("/callback",
@@ -130,7 +129,7 @@ func TestLineHandlers(t *testing.T) {
 			},
 			expectStatus:       http.StatusOK,
 			shouldRegisterFail: true,
-			registerFailError:  services.ErrorGroupAlreadyRegistered,
+			registerFailError:  s.ErrorGroupAlreadyRegistered,
 			shouldReplyFail:    false,
 			expectedReplies:    1,
 		},
@@ -168,7 +167,7 @@ func TestLineHandlers(t *testing.T) {
 			t.Parallel()
 
 			replyService := &mockReplyService{shouldFail: tc.shouldReplyFail}
-			sCtx := &services.ServiceContext{
+			sCtx := &s.ServiceContext{
 				RegistrationService: &mockRegistrationService{shouldFail: tc.shouldRegisterFail, error: tc.registerFailError},
 				ReplyService:        replyService,
 			}

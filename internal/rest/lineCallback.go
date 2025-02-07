@@ -82,7 +82,7 @@ func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 
 		var registered []*s.GroupDto
 		for _, g := range gs {
-			switch err := sCtx.RegistrationService.Execute(g.Group); err {
+			switch err := sCtx.RegistrationService.Execute(g); err {
 			case nil:
 				registered = append(registered, g)
 			case s.ErrorGroupAlreadyRegistered:
@@ -114,7 +114,7 @@ func LineReplyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 		}
 
 		for _, g := range gs {
-			if err := sCtx.ReplyService.Execute(&g.ReplyToken); err != nil {
+			if err := sCtx.ReplyService.Execute(g); err != nil {
 				fmt.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
 			}
 		}

@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-var _ Service[string] = (*ReplyService)(nil)
+var _ Service[GroupDto] = (*ReplyService)(nil)
 
 const lineReplyApiEndpoint = "https://api.line.me/v2/bot/message/reply"
 
@@ -26,13 +26,13 @@ type ReplyService struct {
 	client *http.Client
 }
 
-func NewReplyService(token string, client *http.Client) Service[string] {
+func NewReplyService(token string, client *http.Client) Service[GroupDto] {
 	return &ReplyService{token: token, client: client}
 }
 
-func (s *ReplyService) Execute(to *string) error {
+func (s *ReplyService) Execute(g *GroupDto) error {
 	p := replyMessageRequest{
-		ReplyToken: *to,
+		ReplyToken: g.ReplyToken,
 		Messages: []message{
 			{Type: "text", Text: "好的"},
 		},
