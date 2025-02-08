@@ -9,3 +9,6 @@ type Repository[T any] interface {
 
 // Record already exists.
 var ErrorAlreadyExists = errors.New("Record already exists")
+
+// Record not found.
+var ErrorNotFound = errors.New("Record not found")

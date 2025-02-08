@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 
 	g "github.com/dannyh79/brp-webhook/internal/groups"
 )
@@ -31,13 +32,14 @@ func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 
 	req, err := http.NewRequest("POST", r.endpoint, bytes.NewBuffer(data))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create save request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := r.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send save request: %w", err)
 	}
 
 	switch resp.StatusCode {
@@ -51,7 +53,26 @@ func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 }
 
 func (r *D1GroupRepository) Destroy(g *g.Group) error {
-	return nil
+	req, err := http.NewRequest("DELETE", path.Join(r.endpoint, g.Id), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create destroy request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send destroy request: %w", err)
+	}
+
+	switch resp.StatusCode {
+	case http.StatusNoContent:
+		return nil
+	case http.StatusNotFound:
+		return ErrorNotFound
+	default:
+		return fmt.Errorf("unexpected response status code: %d", resp.StatusCode)
+	}
 }
 
 func NewD1GroupRepository(u endpoint, c *http.Client) *D1GroupRepository {
