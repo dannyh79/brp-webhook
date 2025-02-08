@@ -43,78 +43,33 @@ type LeaveEvent struct {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-func LineMsgEventsHandler(ctx *gin.Context) {
-	defer ctx.Request.Body.Close()
-
-	var b LineCallbackBody
-	if err := ctx.ShouldBindJSON(&b); err != nil {
-		log.Printf("Error in unmarshalling request body: %v", err)
-		ctx.Next()
-		return
-	}
-
-	var regs []*s.GroupDto
-	var cancels []*s.GroupDto
-	for _, e := range b.Events {
-		switch e.Type {
-		case "message":
-			if e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
-				g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
-				regs = append(regs, g)
-			}
-		case "leave":
-			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), "")
-			cancels = append(cancels, g)
-		default:
-		}
-	}
-
-	ctx.Set("registrations", regs)
-	ctx.Set("cancels", cancels)
-
-	ctx.Next()
-}
-
-func LineUnlistGroupHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
+func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("cancels")
-		if !exists {
+		var b LineCallbackBody
+		if err := ctx.ShouldBindJSON(&b); err != nil {
+			log.Printf("Error in unmarshalling request body: %v", err)
 			ctx.Next()
 			return
 		}
 
-		gs, ok := gsIf.([]*s.GroupDto)
-		if !ok {
-			ctx.Next()
-			return
-		}
-
-		for _, g := range gs {
-			if err := sCtx.UnlistService.Execute(g); err != nil {
-				log.Printf("Error in unlisting group: %v", err)
+		var regs []*s.GroupDto
+		var cancels []*s.GroupDto
+		for _, e := range b.Events {
+			switch e.Type {
+			case "message":
+				if e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
+					g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
+					regs = append(regs, g)
+				}
+			case "leave":
+				g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), "")
+				cancels = append(cancels, g)
+			default:
 			}
-		}
-
-		ctx.Next()
-	}
-}
-
-func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("registrations")
-		if !exists {
-			ctx.Next()
-			return
-		}
-
-		gs, ok := gsIf.([]*s.GroupDto)
-		if !ok {
-			ctx.Next()
-			return
 		}
 
 		var registered []*s.GroupDto
-		for _, g := range gs {
+		for _, g := range regs {
 			switch err := sCtx.RegistrationService.Execute(g); err {
 			case nil:
 				registered = append(registered, g)
@@ -125,30 +80,16 @@ func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 				log.Printf("Error in registering group: %v", err)
 			}
 		}
-
-		ctx.Set("registeredGroups", registered)
-
-		ctx.Next()
-	}
-}
-
-func LineReplyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("registeredGroups")
-		if !exists {
-			ctx.Next()
-			return
-		}
-
-		gs, ok := gsIf.([]*s.GroupDto)
-		if !ok {
-			ctx.Next()
-			return
-		}
-
-		for _, g := range gs {
+		for _, g := range registered {
 			if err := sCtx.ReplyService.Execute(g); err != nil {
 				log.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
+			}
+		}
+
+		ctx.Set("cancels", cancels)
+		for _, g := range cancels {
+			if err := sCtx.UnlistService.Execute(g); err != nil {
+				log.Printf("Error in unlisting group: %v", err)
 			}
 		}
 
