@@ -7,12 +7,14 @@ type Service[T any] interface {
 }
 
 type ServiceContext struct {
+	UnlistService       Service[GroupDto]
 	RegistrationService Service[GroupDto]
 	ReplyService        Service[GroupDto]
 }
 
-func NewServiceContext(regS, replyS Service[GroupDto]) *ServiceContext {
+func NewServiceContext(unlS, regS, replyS Service[GroupDto]) *ServiceContext {
 	return &ServiceContext{
+		UnlistService:       unlS,
 		RegistrationService: regS,
 		ReplyService:        replyS,
 	}

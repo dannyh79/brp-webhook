@@ -43,82 +43,57 @@ type LeaveEvent struct {
 
 const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
-func LineMsgEventsHandler(ctx *gin.Context) {
-	defer ctx.Request.Body.Close()
+func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var b LineCallbackBody
+		if err := ctx.ShouldBindJSON(&b); err != nil {
+			log.Printf("Error in unmarshalling request body: %v", err)
+			ctx.Next()
+			return
+		}
 
-	var b LineCallbackBody
-	if err := ctx.ShouldBindJSON(&b); err != nil {
-		log.Printf("Error in unmarshalling request body: %v", err)
+		for _, e := range b.Events {
+			// NOTE: Current flow targets group-related events only
+			if e.Source.GroupId == "" {
+				continue
+			}
+
+			switch e.Type {
+			case "message":
+				handleMessageEvent(sCtx, e)
+			case "leave":
+				handleLeaveEvent(sCtx, e)
+			}
+		}
+
 		ctx.Next()
+	}
+}
+
+func handleMessageEvent(sCtx *s.ServiceContext, e Event) {
+	if e.Message.Text != RegisterMyGroupMsg || len(e.ReplyToken) == 0 {
 		return
 	}
 
-	var gs []*s.GroupDto
-	for _, e := range b.Events {
-		if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
-			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
-			gs = append(gs, g)
+	g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
+
+	if err := sCtx.RegistrationService.Execute(g); err != nil {
+		if err == s.ErrorGroupAlreadyRegistered {
+			g.WasRegistered = true
+		} else {
+			log.Printf("Error in registering group: %v", err)
+			return
 		}
 	}
 
-	ctx.Set("groups", gs)
-
-	ctx.Next()
-}
-
-func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("groups")
-		if !exists {
-			ctx.Next()
-			return
-		}
-
-		gs, ok := gsIf.([]*s.GroupDto)
-		if !ok {
-			ctx.Next()
-			return
-		}
-
-		var registered []*s.GroupDto
-		for _, g := range gs {
-			switch err := sCtx.RegistrationService.Execute(g); err {
-			case nil:
-				registered = append(registered, g)
-			case s.ErrorGroupAlreadyRegistered:
-				g.WasRegistered = true
-				registered = append(registered, g)
-			default:
-				log.Printf("Error in registering group: %v", err)
-			}
-		}
-
-		ctx.Set("registeredGroups", registered)
-
-		ctx.Next()
+	if err := sCtx.ReplyService.Execute(g); err != nil {
+		log.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
 	}
 }
 
-func LineReplyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("registeredGroups")
-		if !exists {
-			ctx.Next()
-			return
-		}
-
-		gs, ok := gsIf.([]*s.GroupDto)
-		if !ok {
-			ctx.Next()
-			return
-		}
-
-		for _, g := range gs {
-			if err := sCtx.ReplyService.Execute(g); err != nil {
-				log.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
-			}
-		}
-
-		ctx.Next()
+func handleLeaveEvent(sCtx *s.ServiceContext, e Event) {
+	g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), "")
+	if err := sCtx.UnlistService.Execute(g); err != nil {
+		log.Printf("Error in unlisting group: %v", err)
 	}
 }

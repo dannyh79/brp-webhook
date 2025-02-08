@@ -63,6 +63,8 @@ func (s *ReplyService) Execute(g *GroupDto) error {
 		return fmt.Errorf("failed to send reply request: %w", err)
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code from replying: %d", resp.StatusCode)
 	}
