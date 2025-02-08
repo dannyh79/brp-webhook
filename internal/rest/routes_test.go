@@ -83,6 +83,33 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       1,
 		},
 		{
+			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event & leave event from groups`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text": "請好好靈修每日推播靈修內容到這",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+					{
+						"type": "leave",
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+					},
+				},
+			},
+			expectedUnlistings:    1,
+			expectedRegistrations: 1,
+			expectedReplies:       1,
+		},
+		{
 			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - registration failed from having existing record`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
