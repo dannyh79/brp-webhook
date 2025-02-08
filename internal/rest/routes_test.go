@@ -3,7 +3,6 @@ package routes_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,63 +10,165 @@ import (
 	routes "github.com/dannyh79/brp-webhook/internal/rest"
 	s "github.com/dannyh79/brp-webhook/internal/services"
 	u "github.com/dannyh79/brp-webhook/internal/testutils"
+	"github.com/stretchr/testify/assert"
 )
-
-var textMessageEvent = routes.MessageEvent{
-	Event: routes.Event{
-		Type: "message",
-		Source: routes.Source{
-			Type:    "user",
-			GroupId: "C1234f49365c6b492b337189e3343a9d9",
-			UserId:  "U123425e31582f9bdc77b386c1d02477e",
-		},
-		ReplyToken: "nHuyWiB7yP5Zw52FIkcQobQuGDXCTA",
-	},
-	Message: routes.MessageEventBody{
-		Type: "text",
-		Text: routes.RegisterMyGroupMsg,
-	},
-}
 
 func Test_POSTCallback(t *testing.T) {
 	u.InitRoutesTest()
 
-	textMessageEventString, _ := json.Marshal(textMessageEvent)
 	tcs := []struct {
-		name                string
-		hasReqHead          bool
+		name         string
+		expectStatus int
+
+		reqBody             map[string]interface{}
+		noSignatureHead     bool
 		hasInvalidSignature bool
-		reqBody             []byte
-		statusCode          int
+
+		expectedUnlistings    int
+		shouldUnlistFail      bool
+		shouldRegisterFail    bool
+		expectedRegistrations int
+		registerFailError     error
+		expectedReplies       int
+		shouldReplyFail       bool
 	}{
+		//#region authentication for LINE requests
 		{
-			name:       "Returns 200",
-			hasReqHead: true,
-			reqBody:    []byte(`{"events":[]}`),
-			statusCode: 200,
+			name:         "Returns 400 when the request is missing body",
+			expectStatus: http.StatusBadRequest,
 		},
 		{
-			name:       "Returns 200 when there is a text message event",
-			hasReqHead: true,
-			reqBody:    []byte(fmt.Sprintf(`{"events":[%s]}`, textMessageEventString)),
-			statusCode: 200,
-		},
-		{
-			name:       "Returns 400 when the request is missing body",
-			hasReqHead: true,
-			statusCode: 400,
-		},
-		{
-			name:       "Returns 401 when the request is missing signature header",
-			reqBody:    []byte(`{"foo":"bar"}`),
-			statusCode: 401,
+			name:            "Returns 401 when the request is missing signature header",
+			expectStatus:    http.StatusUnauthorized,
+			reqBody:         map[string]interface{}{},
+			noSignatureHead: true,
 		},
 		{
 			name:                "Returns 401 when the request is not authorized",
-			hasReqHead:          true,
+			expectStatus:        http.StatusUnauthorized,
 			hasInvalidSignature: true,
-			reqBody:             []byte(`{"events":[]}`),
-			statusCode:          401,
+			reqBody:             map[string]interface{}{},
+		},
+		//#endregion
+
+		{
+			name:         `Returns 200 when there is no events in request body`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{},
+			},
+			expectedUnlistings:    0,
+			expectedRegistrations: 0,
+			expectedReplies:       0,
+		},
+		{
+			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text": "請好好靈修每日推播靈修內容到這",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectedUnlistings:    0,
+			expectedRegistrations: 1,
+			expectedReplies:       1,
+		},
+		{
+			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - registration failed from having existing record`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text": "請好好靈修每日推播靈修內容到這",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectedUnlistings:    0,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    true,
+			registerFailError:     s.ErrorGroupAlreadyRegistered,
+			expectedReplies:       1,
+		},
+		{
+			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - registration failed for any other reason`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text": "請好好靈修每日推播靈修內容到這",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectedUnlistings:    0,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    true,
+			expectedReplies:       0,
+		},
+		{
+			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - reply failed`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text": "請好好靈修每日推播靈修內容到這",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectedUnlistings:    0,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    false,
+			expectedReplies:       1,
+			shouldReplyFail:       true,
+		},
+		{
+			name:         `Returns 200 when receiving leave event`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "leave",
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+					},
+				},
+			},
+			expectedUnlistings:    1,
+			shouldUnlistFail:      false,
+			expectedRegistrations: 0,
+			shouldRegisterFail:    false,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
 		},
 	}
 
@@ -75,30 +176,37 @@ func Test_POSTCallback(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			regS := u.NewMockService[s.GroupDto](false)
-			repS := u.NewMockService[s.GroupDto](false)
-			sCtx := &s.ServiceContext{
-				RegistrationService: regS,
-				ReplyService:        repS,
-			}
+			unlS := u.NewMockService[s.GroupDto](tc.shouldUnlistFail)
+			regS := u.NewMockService[s.GroupDto](tc.shouldRegisterFail, tc.registerFailError)
+			repS := u.NewMockService[s.GroupDto](tc.shouldReplyFail)
+			sCtx := &s.ServiceContext{UnlistService: unlS, RegistrationService: regS, ReplyService: repS}
 
 			suite := u.NewRoutesTestSuite()
 			routes.AddRoutes(suite.Router, u.StubSecret, sCtx)
 
-			req, _ := http.NewRequest(http.MethodPost, "/api/v1/callback", bytes.NewBuffer(tc.reqBody))
-			if tc.hasReqHead && len(tc.reqBody) > 0 {
-				s := u.GenerateSignature(u.StubSecret, string(tc.reqBody))
-				if tc.hasInvalidSignature {
-					s = u.GenerateSignature("some-invalid-line-channel-secret", string(tc.reqBody))
-				}
+			body, _ := json.Marshal(tc.reqBody)
+			var req *http.Request
+			if tc.reqBody == nil {
+				req, _ = http.NewRequest(http.MethodPost, "/api/v1/callback", nil)
+			} else {
+				req, _ = http.NewRequest(http.MethodPost, "/api/v1/callback", bytes.NewBuffer(body))
+			}
 
+			if !tc.noSignatureHead {
+				s := u.GenerateSignature(u.StubSecret, string(body))
+				if tc.hasInvalidSignature {
+					s = u.GenerateSignature("some-invalid-line-channel-secret", string(body))
+				}
 				req.Header.Add("x-line-signature", s)
 			}
 
 			rr := httptest.NewRecorder()
 			suite.Router.ServeHTTP(rr, req)
 
-			u.AssertHttpStatus(t)(rr, tc.statusCode)
+			u.AssertHttpStatus(t)(rr, tc.expectStatus)
+			assert.Equal(t, tc.expectedUnlistings, unlS.CalledTimes(), "Unexpected number of unlistings triggered")
+			assert.Equal(t, tc.expectedRegistrations, regS.CalledTimes(), "Unexpected number of registrations triggered")
+			assert.Equal(t, tc.expectedReplies, repS.CalledTimes(), "Unexpected number of replies triggered")
 		})
 	}
 }
