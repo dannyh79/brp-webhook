@@ -42,6 +42,8 @@ func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 		return nil, fmt.Errorf("failed to send save request: %w", err)
 	}
 
+	defer resp.Body.Close()
+
 	switch resp.StatusCode {
 	case http.StatusNoContent:
 		return g, nil
@@ -64,6 +66,8 @@ func (r *D1GroupRepository) Destroy(g *g.Group) error {
 	if err != nil {
 		return fmt.Errorf("failed to send destroy request: %w", err)
 	}
+
+	defer resp.Body.Close()
 
 	switch resp.StatusCode {
 	case http.StatusNoContent:
