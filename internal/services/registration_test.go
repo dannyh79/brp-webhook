@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ r.Repository[g.Group] = (*mockRepo)(nil)
+
 type mockRepo struct {
 	shouldFail bool
 	error
@@ -23,6 +25,10 @@ func (r *mockRepo) Save(g *g.Group) (*g.Group, error) {
 		r.error = errors.New("failed to save group")
 	}
 	return nil, r.error
+}
+
+func (r *mockRepo) Destroy(g *g.Group) error {
+	return nil
 }
 
 func Test_RegistrationService(t *testing.T) {

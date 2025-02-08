@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dannyh79/brp-webhook/internal/groups"
+	g "github.com/dannyh79/brp-webhook/internal/groups"
 )
+
+var _ Repository[g.Group] = (*D1GroupRepository)(nil)
 
 type endpoint = string
 
@@ -20,7 +22,7 @@ type D1GroupRepository struct {
 	client *http.Client
 }
 
-func (r *D1GroupRepository) Save(g *groups.Group) (*groups.Group, error) {
+func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 	p := SaveGroupParams{Id: g.Id}
 	data, err := json.Marshal(p)
 	if err != nil {
@@ -46,6 +48,10 @@ func (r *D1GroupRepository) Save(g *groups.Group) (*groups.Group, error) {
 	default:
 		return nil, fmt.Errorf("unexpected response status code: %d", resp.StatusCode)
 	}
+}
+
+func (r *D1GroupRepository) Destroy(g *g.Group) error {
+	return nil
 }
 
 func NewD1GroupRepository(u endpoint, c *http.Client) *D1GroupRepository {

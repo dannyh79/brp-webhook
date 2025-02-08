@@ -4,6 +4,7 @@ import "errors"
 
 type Repository[T any] interface {
 	Save(*T) (*T, error)
+	Destroy(*T) error
 }
 
 // Record already exists.
