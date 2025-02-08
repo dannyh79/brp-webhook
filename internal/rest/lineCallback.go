@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"fmt"
+	"log"
 
 	g "github.com/dannyh79/brp-webhook/internal/groups"
 	s "github.com/dannyh79/brp-webhook/internal/services"
@@ -48,7 +48,7 @@ func LineMsgEventsHandler(ctx *gin.Context) {
 
 	var b LineCallbackBody
 	if err := ctx.ShouldBindJSON(&b); err != nil {
-		fmt.Printf("Error in unmarshalling request body: %v", err)
+		log.Printf("Error in unmarshalling request body: %v", err)
 		ctx.Next()
 		return
 	}
@@ -89,7 +89,7 @@ func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 				g.WasRegistered = true
 				registered = append(registered, g)
 			default:
-				fmt.Printf("Error in registering group: %v", err)
+				log.Printf("Error in registering group: %v", err)
 			}
 		}
 
@@ -115,7 +115,7 @@ func LineReplyHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 
 		for _, g := range gs {
 			if err := sCtx.ReplyService.Execute(g); err != nil {
-				fmt.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
+				log.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
 			}
 		}
 

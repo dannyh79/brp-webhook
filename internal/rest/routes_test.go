@@ -33,8 +33,6 @@ func Test_POSTCallback(t *testing.T) {
 	u.InitRoutesTest()
 
 	textMessageEventString, _ := json.Marshal(textMessageEvent)
-	fmt.Printf(`{"events":[%s]}`, textMessageEventString)
-
 	tcs := []struct {
 		name                string
 		hasReqHead          bool
