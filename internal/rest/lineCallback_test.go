@@ -16,11 +16,13 @@ import (
 )
 
 type mockRegistrationService struct {
-	shouldFail bool
+	shouldFail  bool
+	calledTimes int
 	error
 }
 
 func (m *mockRegistrationService) Execute(g *s.GroupDto) error {
+	m.calledTimes++
 	if !m.shouldFail {
 		return nil
 	}
@@ -28,6 +30,10 @@ func (m *mockRegistrationService) Execute(g *s.GroupDto) error {
 		m.error = fmt.Errorf("failed to register group")
 	}
 	return m.error
+}
+
+func (m *mockRegistrationService) CalledTimes() int {
+	return m.calledTimes
 }
 
 type mockReplyService struct {
@@ -61,13 +67,14 @@ func setupRouter(sCtx *s.ServiceContext) *gin.Engine {
 
 func TestLineHandlers(t *testing.T) {
 	testCases := []struct {
-		name               string
-		requestBody        map[string]interface{}
-		expectStatus       int
-		shouldRegisterFail bool
-		registerFailError  error
-		shouldReplyFail    bool
-		expectedReplies    int
+		name                  string
+		requestBody           map[string]interface{}
+		expectStatus          int
+		shouldRegisterFail    bool
+		expectedRegistrations int
+		registerFailError     error
+		expectedReplies       int
+		shouldReplyFail       bool
 	}{
 		{
 			name: "Successful message processing",
@@ -85,10 +92,33 @@ func TestLineHandlers(t *testing.T) {
 					},
 				},
 			},
-			expectStatus:       http.StatusOK,
-			shouldRegisterFail: false,
-			shouldReplyFail:    false,
-			expectedReplies:    1,
+			expectStatus:          http.StatusOK,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    false,
+			expectedReplies:       1,
+			shouldReplyFail:       false,
+		},
+		{
+			name: `Received text other than "請好好靈修每日推播靈修內容到這"`,
+			requestBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "message",
+						"message": map[string]interface{}{
+							"text": "some text.",
+						},
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectStatus:          http.StatusOK,
+			expectedRegistrations: 0,
+			shouldRegisterFail:    false,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
 		},
 		{
 			name: "Group registration fails",
@@ -106,10 +136,11 @@ func TestLineHandlers(t *testing.T) {
 					},
 				},
 			},
-			expectStatus:       http.StatusOK,
-			shouldRegisterFail: true,
-			shouldReplyFail:    false,
-			expectedReplies:    0,
+			expectStatus:          http.StatusOK,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    true,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
 		},
 		{
 			name: "Group registration fails from record already exists",
@@ -127,11 +158,12 @@ func TestLineHandlers(t *testing.T) {
 					},
 				},
 			},
-			expectStatus:       http.StatusOK,
-			shouldRegisterFail: true,
-			registerFailError:  s.ErrorGroupAlreadyRegistered,
-			shouldReplyFail:    false,
-			expectedReplies:    1,
+			expectStatus:          http.StatusOK,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    true,
+			registerFailError:     s.ErrorGroupAlreadyRegistered,
+			expectedReplies:       1,
+			shouldReplyFail:       false,
 		},
 		{
 			name: "Reply service fails",
@@ -149,16 +181,18 @@ func TestLineHandlers(t *testing.T) {
 					},
 				},
 			},
-			expectStatus:       http.StatusOK,
-			shouldRegisterFail: false,
-			shouldReplyFail:    true,
-			expectedReplies:    1,
+			expectStatus:          http.StatusOK,
+			expectedRegistrations: 1,
+			shouldRegisterFail:    false,
+			expectedReplies:       1,
+			shouldReplyFail:       true,
 		},
 		{
-			name:            "Invalid event type",
-			requestBody:     map[string]interface{}{"events": []map[string]interface{}{}},
-			expectStatus:    http.StatusOK,
-			expectedReplies: 0,
+			name:                  "Invalid event type",
+			requestBody:           map[string]interface{}{"events": []map[string]interface{}{}},
+			expectStatus:          http.StatusOK,
+			expectedRegistrations: 0,
+			expectedReplies:       0,
 		},
 	}
 
@@ -166,10 +200,11 @@ func TestLineHandlers(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			replyService := &mockReplyService{shouldFail: tc.shouldReplyFail}
+			regS := &mockRegistrationService{shouldFail: tc.shouldRegisterFail, error: tc.registerFailError}
+			repS := &mockReplyService{shouldFail: tc.shouldReplyFail}
 			sCtx := &s.ServiceContext{
-				RegistrationService: &mockRegistrationService{shouldFail: tc.shouldRegisterFail, error: tc.registerFailError},
-				ReplyService:        replyService,
+				RegistrationService: regS,
+				ReplyService:        repS,
 			}
 
 			router := setupRouter(sCtx)
@@ -182,7 +217,8 @@ func TestLineHandlers(t *testing.T) {
 			router.ServeHTTP(rr, req)
 
 			u.AssertHttpStatus(t)(rr, tc.expectStatus)
-			assert.Equal(t, tc.expectedReplies, replyService.CalledTimes(), "Unexpected number of replies triggered")
+			assert.Equal(t, tc.expectedRegistrations, regS.CalledTimes(), "Unexpected number of registrations triggered")
+			assert.Equal(t, tc.expectedReplies, repS.CalledTimes(), "Unexpected number of replies triggered")
 		})
 	}
 }
