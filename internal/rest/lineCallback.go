@@ -52,47 +52,48 @@ func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 			return
 		}
 
-		var regs []*s.GroupDto
-		var cancels []*s.GroupDto
 		for _, e := range b.Events {
+			// NOTE: Current flow targets group-related events only
+			if e.Source.GroupId == "" {
+				continue
+			}
+
 			switch e.Type {
 			case "message":
-				if e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
-					g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
-					regs = append(regs, g)
-				}
+				handleMessageEvent(sCtx, e)
 			case "leave":
-				g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), "")
-				cancels = append(cancels, g)
-			default:
-			}
-		}
-
-		var registered []*s.GroupDto
-		for _, g := range regs {
-			switch err := sCtx.RegistrationService.Execute(g); err {
-			case nil:
-				registered = append(registered, g)
-			case s.ErrorGroupAlreadyRegistered:
-				g.WasRegistered = true
-				registered = append(registered, g)
-			default:
-				log.Printf("Error in registering group: %v", err)
-			}
-		}
-		for _, g := range registered {
-			if err := sCtx.ReplyService.Execute(g); err != nil {
-				log.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
-			}
-		}
-
-		ctx.Set("cancels", cancels)
-		for _, g := range cancels {
-			if err := sCtx.UnlistService.Execute(g); err != nil {
-				log.Printf("Error in unlisting group: %v", err)
+				handleLeaveEvent(sCtx, e)
 			}
 		}
 
 		ctx.Next()
+	}
+}
+
+func handleMessageEvent(sCtx *s.ServiceContext, e Event) {
+	if e.Message.Text != RegisterMyGroupMsg || len(e.ReplyToken) == 0 {
+		return
+	}
+
+	g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
+
+	if err := sCtx.RegistrationService.Execute(g); err != nil {
+		if err == s.ErrorGroupAlreadyRegistered {
+			g.WasRegistered = true
+		} else {
+			log.Printf("Error in registering group: %v", err)
+			return
+		}
+	}
+
+	if err := sCtx.ReplyService.Execute(g); err != nil {
+		log.Printf("Error in replying to completed registration for group %v via LINE: %v", g.Id, err)
+	}
+}
+
+func handleLeaveEvent(sCtx *s.ServiceContext, e Event) {
+	g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), "")
+	if err := sCtx.UnlistService.Execute(g); err != nil {
+		log.Printf("Error in unlisting group: %v", err)
 	}
 }
