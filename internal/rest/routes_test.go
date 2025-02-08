@@ -197,6 +197,26 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       0,
 			shouldReplyFail:       false,
 		},
+		{
+			name:         `Returns 200 when receiving leave event - unlist failed`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "leave",
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+					},
+				},
+			},
+			expectedUnlistings:    1,
+			shouldUnlistFail:      true,
+			expectedRegistrations: 0,
+			shouldRegisterFail:    false,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
+		},
 	}
 
 	for _, tc := range tcs {
