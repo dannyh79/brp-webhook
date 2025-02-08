@@ -53,22 +53,55 @@ func LineMsgEventsHandler(ctx *gin.Context) {
 		return
 	}
 
-	var gs []*s.GroupDto
+	var regs []*s.GroupDto
+	var cancels []*s.GroupDto
 	for _, e := range b.Events {
-		if e.Type == "message" && e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
-			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
-			gs = append(gs, g)
+		switch e.Type {
+		case "message":
+			if e.Message.Text == RegisterMyGroupMsg && len(e.ReplyToken) > 0 {
+				g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
+				regs = append(regs, g)
+			}
+		case "leave":
+			g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), "")
+			cancels = append(cancels, g)
+		default:
 		}
 	}
 
-	ctx.Set("groups", gs)
+	ctx.Set("registrations", regs)
+	ctx.Set("cancels", cancels)
 
 	ctx.Next()
 }
 
+func LineUnlistGroupHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		gsIf, exists := ctx.Get("cancels")
+		if !exists {
+			ctx.Next()
+			return
+		}
+
+		gs, ok := gsIf.([]*s.GroupDto)
+		if !ok {
+			ctx.Next()
+			return
+		}
+
+		for _, g := range gs {
+			if err := sCtx.UnlistService.Execute(g); err != nil {
+				log.Printf("Error in unlisting group: %v", err)
+			}
+		}
+
+		ctx.Next()
+	}
+}
+
 func LineGroupRegistrationHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		gsIf, exists := ctx.Get("groups")
+		gsIf, exists := ctx.Get("registrations")
 		if !exists {
 			ctx.Next()
 			return

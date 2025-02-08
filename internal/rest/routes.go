@@ -9,6 +9,7 @@ func AddRoutes(r *gin.Engine, cs channelSecret, sCtx *s.ServiceContext) {
 	r.Use(LineAuthMiddleware(cs))
 	r.POST("/api/v1/callback",
 		LineMsgEventsHandler,
+		LineUnlistGroupHandler(sCtx),
 		LineGroupRegistrationHandler(sCtx),
 		LineReplyHandler(sCtx),
 		successHandler,

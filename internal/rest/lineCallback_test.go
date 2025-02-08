@@ -20,6 +20,8 @@ func TestLineHandlers(t *testing.T) {
 		name                  string
 		requestBody           map[string]interface{}
 		expectStatus          int
+		expectedUnlistings    int
+		shouldUnlistFail      bool
 		shouldRegisterFail    bool
 		expectedRegistrations int
 		registerFailError     error
@@ -144,15 +146,36 @@ func TestLineHandlers(t *testing.T) {
 			expectedRegistrations: 0,
 			expectedReplies:       0,
 		},
+		{
+			name: "Successful unlisting group",
+			requestBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "leave",
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+					},
+				},
+			},
+			expectStatus:          http.StatusOK,
+			expectedUnlistings:    1,
+			shouldUnlistFail:      false,
+			expectedRegistrations: 0,
+			shouldRegisterFail:    false,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			unlS := u.NewMockService[s.GroupDto](tc.shouldUnlistFail)
 			regS := u.NewMockService[s.GroupDto](tc.shouldRegisterFail, tc.registerFailError)
 			repS := u.NewMockService[s.GroupDto](tc.shouldReplyFail)
-			sCtx := &s.ServiceContext{RegistrationService: regS, ReplyService: repS}
+			sCtx := &s.ServiceContext{UnlistService: unlS, RegistrationService: regS, ReplyService: repS}
 			suite := u.NewRoutesTestSuite()
 			setupRouter(suite, sCtx)
 
@@ -164,6 +187,7 @@ func TestLineHandlers(t *testing.T) {
 			suite.Router.ServeHTTP(rr, req)
 
 			u.AssertHttpStatus(t)(rr, tc.expectStatus)
+			assert.Equal(t, tc.expectedUnlistings, unlS.CalledTimes(), "Unexpected number of unlistings triggered")
 			assert.Equal(t, tc.expectedRegistrations, regS.CalledTimes(), "Unexpected number of registrations triggered")
 			assert.Equal(t, tc.expectedReplies, repS.CalledTimes(), "Unexpected number of replies triggered")
 		})
@@ -173,6 +197,7 @@ func TestLineHandlers(t *testing.T) {
 func setupRouter(s *u.RoutesTestSuite, sCtx *s.ServiceContext) {
 	s.Router.POST("/callback",
 		routes.LineMsgEventsHandler,
+		routes.LineUnlistGroupHandler(sCtx),
 		routes.LineGroupRegistrationHandler(sCtx),
 		routes.LineReplyHandler(sCtx),
 	)
