@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/dannyh79/brp-webhook/internal/repositories"
-	routes "github.com/dannyh79/brp-webhook/internal/rest"
-	"github.com/dannyh79/brp-webhook/internal/services"
+	r "github.com/dannyh79/brp-webhook/internal/repositories"
+	rest "github.com/dannyh79/brp-webhook/internal/rest"
+	s "github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -38,16 +38,16 @@ func main() {
 	}
 
 	httpClient := &http.Client{}
-	repo := repositories.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, httpClient)
-	sCtx := services.NewServiceContext(
-		services.NewUnlistService(repo),
-		services.NewRegistrationService(repo),
-		services.NewReplyService(cfg.LineChannelAccessToken, httpClient),
+	repo := r.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, httpClient)
+	sCtx := s.NewServiceContext(
+		s.NewUnlistService(repo),
+		s.NewRegistrationService(repo),
+		s.NewReplyService(cfg.LineChannelAccessToken, httpClient),
 	)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	routes.AddRoutes(router, cfg.LineChannelSecret, sCtx)
+	rest.AddRoutes(router, cfg.LineChannelSecret, sCtx)
 	err = router.Run(fmt.Sprintf(":%v", cfg.Port))
 	if err != nil {
 		log.Fatalf("Error in starting the app: %v", err)
