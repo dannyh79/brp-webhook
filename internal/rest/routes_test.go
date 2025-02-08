@@ -8,15 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dannyh79/brp-webhook/internal/groups"
 	routes "github.com/dannyh79/brp-webhook/internal/rest"
-	"github.com/dannyh79/brp-webhook/internal/services"
+	s "github.com/dannyh79/brp-webhook/internal/services"
 	u "github.com/dannyh79/brp-webhook/internal/testutils"
-	"github.com/gin-gonic/gin"
 )
-
-const stubSecret = "some-line-channel-secret"
-const stubChannelToken = "some-line-channel-token"
 
 var textMessageEvent = routes.MessageEvent{
 	Event: routes.Event{
@@ -35,6 +30,8 @@ var textMessageEvent = routes.MessageEvent{
 }
 
 func Test_POSTCallback(t *testing.T) {
+	u.InitRoutesTest()
+
 	textMessageEventString, _ := json.Marshal(textMessageEvent)
 	fmt.Printf(`{"events":[%s]}`, textMessageEventString)
 
@@ -80,11 +77,19 @@ func Test_POSTCallback(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			suite := newTestSuite(stubSecret)
-			rr := httptest.NewRecorder()
+			regS := u.NewMockService[s.GroupDto](false)
+			repS := u.NewMockService[s.GroupDto](false)
+			sCtx := &s.ServiceContext{
+				RegistrationService: regS,
+				ReplyService:        repS,
+			}
+
+			suite := u.NewRoutesTestSuite()
+			routes.AddRoutes(suite.Router, u.StubSecret, sCtx)
+
 			req, _ := http.NewRequest(http.MethodPost, "/api/v1/callback", bytes.NewBuffer(tc.reqBody))
 			if tc.hasReqHead && len(tc.reqBody) > 0 {
-				s := u.GenerateSignature(stubSecret, string(tc.reqBody))
+				s := u.GenerateSignature(u.StubSecret, string(tc.reqBody))
 				if tc.hasInvalidSignature {
 					s = u.GenerateSignature("some-invalid-line-channel-secret", string(tc.reqBody))
 				}
@@ -92,38 +97,10 @@ func Test_POSTCallback(t *testing.T) {
 				req.Header.Add("x-line-signature", s)
 			}
 
+			rr := httptest.NewRecorder()
 			suite.Router.ServeHTTP(rr, req)
 
 			u.AssertHttpStatus(t)(rr, tc.statusCode)
 		})
-	}
-}
-
-func init() {
-	gin.SetMode(gin.TestMode)
-}
-
-type testSuite struct {
-	Router *gin.Engine
-}
-
-type stubGroupRepo struct{}
-
-func (r *stubGroupRepo) Save(g *groups.Group) (*groups.Group, error) {
-	return g, nil
-}
-
-func newTestSuite(cs string) *testSuite {
-	r := gin.New()
-
-	hc := u.NewMockHttpClient(200)
-	sCtx := services.NewServiceContext(
-		services.NewRegistrationService(&stubGroupRepo{}),
-		services.NewReplyService(stubChannelToken, hc),
-	)
-	routes.AddRoutes(r, cs, sCtx)
-
-	return &testSuite{
-		Router: r,
 	}
 }

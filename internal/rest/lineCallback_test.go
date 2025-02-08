@@ -3,7 +3,6 @@ package routes_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,61 +10,12 @@ import (
 	"github.com/dannyh79/brp-webhook/internal/rest"
 	s "github.com/dannyh79/brp-webhook/internal/services"
 	u "github.com/dannyh79/brp-webhook/internal/testutils"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-type mockRegistrationService struct {
-	shouldFail  bool
-	calledTimes int
-	error
-}
-
-func (m *mockRegistrationService) Execute(g *s.GroupDto) error {
-	m.calledTimes++
-	if !m.shouldFail {
-		return nil
-	}
-	if m.error == nil {
-		m.error = fmt.Errorf("failed to register group")
-	}
-	return m.error
-}
-
-func (m *mockRegistrationService) CalledTimes() int {
-	return m.calledTimes
-}
-
-type mockReplyService struct {
-	shouldFail  bool
-	calledTimes int
-}
-
-func (m *mockReplyService) Execute(g *s.GroupDto) error {
-	m.calledTimes++
-	if m.shouldFail {
-		return fmt.Errorf("failed to send reply")
-	}
-	return nil
-}
-
-func (m *mockReplyService) CalledTimes() int {
-	return m.calledTimes
-}
-
-func setupRouter(sCtx *s.ServiceContext) *gin.Engine {
-	router := gin.New()
-
-	router.POST("/callback",
-		routes.LineMsgEventsHandler,
-		routes.LineGroupRegistrationHandler(sCtx),
-		routes.LineReplyHandler(sCtx),
-	)
-
-	return router
-}
-
 func TestLineHandlers(t *testing.T) {
+	u.InitRoutesTest()
+
 	testCases := []struct {
 		name                  string
 		requestBody           map[string]interface{}
@@ -200,25 +150,30 @@ func TestLineHandlers(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			regS := &mockRegistrationService{shouldFail: tc.shouldRegisterFail, error: tc.registerFailError}
-			repS := &mockReplyService{shouldFail: tc.shouldReplyFail}
-			sCtx := &s.ServiceContext{
-				RegistrationService: regS,
-				ReplyService:        repS,
-			}
+			regS := u.NewMockService[s.GroupDto](tc.shouldRegisterFail, tc.registerFailError)
+			repS := u.NewMockService[s.GroupDto](tc.shouldReplyFail)
+			sCtx := &s.ServiceContext{RegistrationService: regS, ReplyService: repS}
+			suite := u.NewRoutesTestSuite()
+			setupRouter(suite, sCtx)
 
-			router := setupRouter(sCtx)
 			body, _ := json.Marshal(tc.requestBody)
-
 			req := httptest.NewRequest("POST", "/callback", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			rr := httptest.NewRecorder()
-			router.ServeHTTP(rr, req)
+			suite.Router.ServeHTTP(rr, req)
 
 			u.AssertHttpStatus(t)(rr, tc.expectStatus)
 			assert.Equal(t, tc.expectedRegistrations, regS.CalledTimes(), "Unexpected number of registrations triggered")
 			assert.Equal(t, tc.expectedReplies, repS.CalledTimes(), "Unexpected number of replies triggered")
 		})
 	}
+}
+
+func setupRouter(s *u.RoutesTestSuite, sCtx *s.ServiceContext) {
+	s.Router.POST("/callback",
+		routes.LineMsgEventsHandler,
+		routes.LineGroupRegistrationHandler(sCtx),
+		routes.LineReplyHandler(sCtx),
+	)
 }
