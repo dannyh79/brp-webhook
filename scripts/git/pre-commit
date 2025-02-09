@@ -1,7 +1,16 @@
 #!/bin/sh
 set -e
 
-echo "Running pre-commit checks on staged files..."
+echo "Running pre-commit checks - go mod tidy..."
+go mod tidy
+
+MOD_DIFF=$(git diff --name-only go.mod go.sum)
+if [ -n "$MOD_DIFF" ]; then
+  echo "go.mod or go.sum changed, adding them to staging..."
+  git add go.mod go.sum
+fi
+
+echo "Running pre-commit checks - staged Go files..."
 
 STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
 
@@ -18,4 +27,4 @@ echo "$STAGED_GO_FILES" | xargs -r git add
 
 go test ./...
 
-echo "Pre-commit checks passed on staged files!"
+echo "Pre-commit checks passed!"
