@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 
 	g "github.com/dannyh79/brp-webhook/internal/groups"
@@ -59,7 +60,12 @@ func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 }
 
 func (r *D1GroupRepository) Destroy(g *g.Group) error {
-	req, err := http.NewRequest("DELETE", path.Join(r.endpoint, g.Id), nil)
+	url, err := r.buildReqUrl(g.Id)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create destroy request: %w", err)
 	}
@@ -86,6 +92,15 @@ func (r *D1GroupRepository) Destroy(g *g.Group) error {
 func (r *D1GroupRepository) setReqHeaders(req *http.Request) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+r.token)
+}
+
+func (r *D1GroupRepository) buildReqUrl(id string) (string, error) {
+	p, err := url.Parse(r.endpoint)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse base URL: %w", err)
+	}
+	p.Path = path.Join(p.Path, id)
+	return p.String(), nil
 }
 
 func NewD1GroupRepository(u endpoint, t token, c *http.Client) *D1GroupRepository {

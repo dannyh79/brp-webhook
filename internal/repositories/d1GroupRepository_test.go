@@ -41,6 +41,7 @@ func TestSaveGroupParams_MarshalJSON(t *testing.T) {
 	}
 }
 
+const stubEndpoint = "https://example.com/api/v1/groups"
 const stubToken = "some-api-token"
 
 func TestD1GroupRepository_Save(t *testing.T) {
@@ -84,17 +85,20 @@ func TestD1GroupRepository_Save(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var hs http.Header
-			mockClient := u.NewMockHttpClient(tc.expectedRespStatus, func(req *http.Request) {
-				hs = req.Header
+			var req *http.Request
+			mockClient := u.NewMockHttpClient(tc.expectedRespStatus, func(r *http.Request) {
+				req = r
 			})
-			repo := r.NewD1GroupRepository("https://example.com/api/v1/groups", stubToken, mockClient)
+			repo := r.NewD1GroupRepository(stubEndpoint, stubToken, mockClient)
 
 			group := &g.Group{Id: "C1234f49365c6b492b337189e3343a9d9"}
 			result, err := repo.Save(group)
 
+			assert.NotNil(t, req, "Request should not be nil")
+			assert.Equal(t, "POST", req.Method, "Expected request method to be %s, but got %s", "POST", req.Method)
+			assert.Equal(t, stubEndpoint, req.URL.String(), "Expected request URL to be %s, but got %s", stubEndpoint, req.URL.String())
 			for k, v := range tc.expectedReqHeaders {
-				assert.Equal(t, v, hs.Get(k), "Expected header %s to be %s, but got %s", k, v, hs.Get(k))
+				assert.Equal(t, v, req.Header.Get(k), "Expected header %s to be %s, but got %s", k, v, req.Header.Get(k))
 			}
 
 			if tc.expectError {
@@ -147,18 +151,21 @@ func TestD1GroupRepository_Destroy(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var hs http.Header
-			mockClient := u.NewMockHttpClient(tc.expectedRespStatus, func(req *http.Request) {
-				hs = req.Header
+			var req *http.Request
+			mockClient := u.NewMockHttpClient(tc.expectedRespStatus, func(r *http.Request) {
+				req = r
 			})
-			repo := r.NewD1GroupRepository("https://example.com/api/v1/groups", stubToken, mockClient)
+			repo := r.NewD1GroupRepository(stubEndpoint, stubToken, mockClient)
 
 			group := &g.Group{Id: "C1234f49365c6b492b337189e3343a9d9"}
 
 			err := repo.Destroy(group)
 
+			assert.NotNil(t, req, "Request should not be nil")
+			assert.Equal(t, "DELETE", req.Method, "Expected request method to be %s, but got %s", "DELETE", req.Method)
+			assert.Equal(t, stubEndpoint+"/"+group.Id, req.URL.String(), "Expected request URL to be %s, but got %s", stubEndpoint, req.URL.String())
 			for k, v := range tc.expectedReqHeaders {
-				assert.Equal(t, v, hs.Get(k), "Expected header %s to be %s, but got %s", k, v, hs.Get(k))
+				assert.Equal(t, v, req.Header.Get(k), "Expected header %s to be %s, but got %s", k, v, req.Header.Get(k))
 			}
 
 			if tc.expectedError == nil {
