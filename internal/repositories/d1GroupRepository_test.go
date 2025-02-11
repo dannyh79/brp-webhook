@@ -41,6 +41,8 @@ func TestSaveGroupParams_MarshalJSON(t *testing.T) {
 	}
 }
 
+const stubToken = "some-api-token"
+
 func TestD1GroupRepository_Save(t *testing.T) {
 	testCases := []struct {
 		name               string
@@ -51,27 +53,27 @@ func TestD1GroupRepository_Save(t *testing.T) {
 	}{
 		{
 			name:               "Returns 204 (Success)",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusNoContent,
 			expectError:        false,
 		},
 		{
 			name:               "Returns 304 (Success)",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusNotModified,
 			expectError:        true,
 			expectedError:      r.ErrorAlreadyExists,
 		},
 		{
 			name:               "Returns 400 (Failure)",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusBadRequest,
 			expectError:        true,
 			expectedError:      fmt.Errorf("unexpected response status: %d", http.StatusBadRequest),
 		},
 		{
 			name:               "Returns 500 (Failure)",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusInternalServerError,
 			expectError:        true,
 			expectedError:      fmt.Errorf("unexpected response status: %d", http.StatusInternalServerError),
@@ -86,7 +88,7 @@ func TestD1GroupRepository_Save(t *testing.T) {
 			mockClient := u.NewMockHttpClient(tc.expectedRespStatus, func(req *http.Request) {
 				hs = req.Header
 			})
-			repo := r.NewD1GroupRepository("https://example.com/api/v1/groups", mockClient)
+			repo := r.NewD1GroupRepository("https://example.com/api/v1/groups", stubToken, mockClient)
 
 			group := &g.Group{Id: "C1234f49365c6b492b337189e3343a9d9"}
 			result, err := repo.Save(group)
@@ -120,21 +122,21 @@ func TestD1GroupRepository_Destroy(t *testing.T) {
 	}{
 		{
 			name:               "Returns nil on successful delete",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusNoContent,
 			shouldFail:         false,
 			expectedError:      nil,
 		},
 		{
 			name:               "Returns ErrorNotFound when group does not exist",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusNotFound,
 			shouldFail:         false,
 			expectedError:      r.ErrorNotFound,
 		},
 		{
 			name:               "Returns an error on unexpected status code",
-			expectedReqHeaders: map[string]string{"Content-Type": "application/json"},
+			expectedReqHeaders: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer " + stubToken},
 			expectedRespStatus: http.StatusInternalServerError,
 			shouldFail:         false,
 			expectedError:      fmt.Errorf("unexpected response status: %d", http.StatusInternalServerError),
@@ -149,7 +151,7 @@ func TestD1GroupRepository_Destroy(t *testing.T) {
 			mockClient := u.NewMockHttpClient(tc.expectedRespStatus, func(req *http.Request) {
 				hs = req.Header
 			})
-			repo := r.NewD1GroupRepository("https://example.com/api/v1/groups", mockClient)
+			repo := r.NewD1GroupRepository("https://example.com/api/v1/groups", stubToken, mockClient)
 
 			group := &g.Group{Id: "C1234f49365c6b492b337189e3343a9d9"}
 

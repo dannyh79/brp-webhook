@@ -39,7 +39,7 @@ func main() {
 	}
 
 	httpClient := &http.Client{}
-	repo := r.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, httpClient)
+	repo := r.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, cfg.D1EndpointApiToken, httpClient)
 	sCtx := s.NewServiceContext(
 		s.NewUnlistService(repo),
 		s.NewRegistrationService(repo),

@@ -14,12 +14,16 @@ var _ Repository[g.Group] = (*D1GroupRepository)(nil)
 
 type endpoint = string
 
+// API token for requesting the endpoint.
+type token = string
+
 type SaveGroupParams struct {
 	Id string `json:"id"`
 }
 
 type D1GroupRepository struct {
 	endpoint
+	token
 	client *http.Client
 }
 
@@ -35,7 +39,7 @@ func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 		return nil, fmt.Errorf("failed to create save request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	r.setReqHeaders(req)
 
 	resp, err := r.client.Do(req)
 	if err != nil {
@@ -60,7 +64,7 @@ func (r *D1GroupRepository) Destroy(g *g.Group) error {
 		return fmt.Errorf("failed to create destroy request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	r.setReqHeaders(req)
 
 	resp, err := r.client.Do(req)
 	if err != nil {
@@ -79,6 +83,11 @@ func (r *D1GroupRepository) Destroy(g *g.Group) error {
 	}
 }
 
-func NewD1GroupRepository(u endpoint, c *http.Client) *D1GroupRepository {
-	return &D1GroupRepository{endpoint: u, client: c}
+func (r *D1GroupRepository) setReqHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+r.token)
+}
+
+func NewD1GroupRepository(u endpoint, t token, c *http.Client) *D1GroupRepository {
+	return &D1GroupRepository{endpoint: u, token: t, client: c}
 }
