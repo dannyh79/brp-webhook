@@ -1,5 +1,6 @@
 LINE_CHANNEL_ACCESS_TOKEN="some-line-channel-access-token"
 LINE_CHANNEL_SECRET="some-secret"
 D1_GROUP_QUERY_ENDPOINT="http://example.com/api/v1/groups"
+D1_ENDPOINT_API_TOKEN="some-very-secretive-token"
 PORT=8080
 ENV="development"

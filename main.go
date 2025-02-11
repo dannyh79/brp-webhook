@@ -20,6 +20,7 @@ type config struct {
 	LineChannelSecret      string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
 	LineChannelAccessToken string `toml:"LINE_CHANNEL_ACCESS_TOKEN" env:"LINE_CHANNEL_ACCESS_TOKEN"`
 	D1GroupQueryEndpoint   string `toml:"D1_GROUP_QUERY_ENDPOINT" env:"D1_GROUP_QUERY_ENDPOINT"`
+	D1EndpointApiToken     string `toml:"D1_ENDPOINT_API_TOKEN" env:"D1_ENDPOINT_API_TOKEN"`
 	Port                   int16  `toml:"PORT" env:"PORT" env-default:"8080"`
 }
 
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	httpClient := &http.Client{}
-	repo := r.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, httpClient)
+	repo := r.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, cfg.D1EndpointApiToken, httpClient)
 	sCtx := s.NewServiceContext(
 		s.NewUnlistService(repo),
 		s.NewRegistrationService(repo),
