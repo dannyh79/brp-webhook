@@ -54,6 +54,7 @@ func main() {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	router.Use(sentry.SentryMiddleware())
 	rest.AddRoutes(router, cfg.LineChannelSecret, sCtx)
 	err = router.Run(fmt.Sprintf(":%v", cfg.Port))
 	if err != nil {
