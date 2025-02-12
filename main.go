@@ -10,6 +10,7 @@ import (
 
 	r "github.com/dannyh79/brp-webhook/internal/repositories"
 	rest "github.com/dannyh79/brp-webhook/internal/rest"
+	"github.com/dannyh79/brp-webhook/internal/sentry"
 	s "github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
@@ -17,6 +18,7 @@ import (
 
 type config struct {
 	Env                    string `toml:"Env" env:"Env" env-default:"production"`
+	SentryDsn              string `toml:"SENTRY_DSN" env:"SENTRY_DSN"`
 	LineChannelSecret      string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
 	LineChannelAccessToken string `toml:"LINE_CHANNEL_ACCESS_TOKEN" env:"LINE_CHANNEL_ACCESS_TOKEN"`
 	D1GroupQueryEndpoint   string `toml:"D1_GROUP_QUERY_ENDPOINT" env:"D1_GROUP_QUERY_ENDPOINT"`
@@ -37,6 +39,10 @@ func main() {
 		log.Println(strings.Join(errs, "\n"))
 		os.Exit(2)
 	}
+
+	monitor := sentry.NewMonitor(cfg.Env, cfg.SentryDsn)
+	monitor.Init()
+	defer monitor.Flush()
 
 	httpClient := &http.Client{}
 	repo := r.NewD1GroupRepository(cfg.D1GroupQueryEndpoint, cfg.D1EndpointApiToken, httpClient)

@@ -1,3 +1,4 @@
+SENTRY_DSN="https://your-public-dsn@sentry.io/your-project-id"
 LINE_CHANNEL_ACCESS_TOKEN="some-line-channel-access-token"
 LINE_CHANNEL_SECRET="some-secret"
 D1_GROUP_QUERY_ENDPOINT="http://example.com/api/v1/groups"
