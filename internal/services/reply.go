@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/dannyh79/brp-webhook/internal/sentry"
 )
 
 var _ Service[GroupDto] = (*ReplyService)(nil)
@@ -26,11 +28,11 @@ type message struct {
 
 type ReplyService struct {
 	token  string
-	client *http.Client
+	client HttpDoer
 }
 
 func NewReplyService(token string, client *http.Client) Service[GroupDto] {
-	return &ReplyService{token: token, client: client}
+	return &ReplyService{token: token, client: sentry.NewSentryHttpClient(client)}
 }
 
 func (s *ReplyService) Execute(g *GroupDto) error {
