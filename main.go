@@ -17,7 +17,7 @@ import (
 )
 
 type config struct {
-	Env                    string `toml:"Env" env:"Env" env-default:"production"`
+	Env                    string `toml:"ENV" env:"ENV" env-default:"production"`
 	SentryDsn              string `toml:"SENTRY_DSN" env:"SENTRY_DSN"`
 	LineChannelSecret      string `toml:"LINE_CHANNEL_SECRET" env:"LINE_CHANNEL_SECRET"`
 	LineChannelAccessToken string `toml:"LINE_CHANNEL_ACCESS_TOKEN" env:"LINE_CHANNEL_ACCESS_TOKEN"`
