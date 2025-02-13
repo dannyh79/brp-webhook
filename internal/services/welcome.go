@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	g "github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/sentry"
 )
 
@@ -16,8 +15,6 @@ type WelcomeService struct {
 	token  string
 	client HttpDoer
 }
-
-const msgWelcome = g.MsgWelcome
 
 func NewWelcomeService(token string, client *http.Client) Service[GroupDto] {
 	return &WelcomeService{token: token, client: sentry.NewSentryHttpClient(client)}
