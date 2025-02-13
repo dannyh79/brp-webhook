@@ -18,13 +18,15 @@ type ServiceContext struct {
 	UnlistService       Service[GroupDto]
 	RegistrationService Service[GroupDto]
 	ReplyService        Service[GroupDto]
+	WelcomeService      Service[GroupDto]
 }
 
-func NewServiceContext(unlS, regS, replyS Service[GroupDto]) *ServiceContext {
+func NewServiceContext(unlistService, registrationService, replyService, welcomeService Service[GroupDto]) *ServiceContext {
 	return &ServiceContext{
-		UnlistService:       unlS,
-		RegistrationService: regS,
-		ReplyService:        replyS,
+		UnlistService:       unlistService,
+		RegistrationService: registrationService,
+		ReplyService:        replyService,
+		WelcomeService:      welcomeService,
 	}
 }
 

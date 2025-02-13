@@ -68,6 +68,8 @@ func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 			}
 
 			switch e.Type {
+			case "join":
+				handleJoinEvent(sCtx, e)
 			case "message":
 				handleMessageEvent(sCtx, e)
 			case "leave":
@@ -76,6 +78,17 @@ func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 		}
 
 		ctx.Next()
+	}
+}
+
+func handleJoinEvent(sCtx *s.ServiceContext, e Event) {
+	if len(e.ReplyToken) == 0 {
+		return
+	}
+
+	g := s.NewGroupDto(g.NewGroup(e.Source.GroupId), e.ReplyToken)
+	if err := sCtx.WelcomeService.Execute(g); err != nil {
+		log.Printf("Error in welcoming group %v via LINE: %v", g.Id, err)
 	}
 }
 

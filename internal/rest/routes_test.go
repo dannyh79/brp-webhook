@@ -24,6 +24,8 @@ func Test_POSTCallback(t *testing.T) {
 		noSignatureHead     bool
 		hasInvalidSignature bool
 
+		expectedWelcomes      int
+		shouldWelcomeFail     bool
 		expectedUnlistings    int
 		shouldUnlistFail      bool
 		shouldRegisterFail    bool
@@ -83,7 +85,7 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       1,
 		},
 		{
-			name:         `Returns 200 when receiving "我需要好好靈修" text message event & leave event from groups`,
+			name:         `Returns 200 when receiving "我需要好好靈修" text message event, leave event, and join event from groups`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
 				"events": []map[string]interface{}{
@@ -100,11 +102,19 @@ func Test_POSTCallback(t *testing.T) {
 					{
 						"type": "leave",
 						"source": map[string]interface{}{
-							"groupId": "C1234",
+							"groupId": "C2345",
 						},
+					},
+					{
+						"type": "join",
+						"source": map[string]interface{}{
+							"groupId": "C3456",
+						},
+						"replyToken": "another-test-reply-token",
 					},
 				},
 			},
+			expectedWelcomes:      1,
 			expectedUnlistings:    1,
 			expectedRegistrations: 1,
 			expectedReplies:       1,
@@ -217,6 +227,52 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       0,
 			shouldReplyFail:       false,
 		},
+		{
+			name:         `Returns 200 when receiving join event`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "join",
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectedWelcomes:      1,
+			shouldWelcomeFail:     false,
+			expectedUnlistings:    0,
+			shouldUnlistFail:      false,
+			expectedRegistrations: 0,
+			shouldRegisterFail:    false,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
+		},
+		{
+			name:         `Returns 200 when receiving join event - welcome failed`,
+			expectStatus: http.StatusOK,
+			reqBody: map[string]interface{}{
+				"events": []map[string]interface{}{
+					{
+						"type": "join",
+						"source": map[string]interface{}{
+							"groupId": "C1234",
+						},
+						"replyToken": "test-reply-token",
+					},
+				},
+			},
+			expectedWelcomes:      1,
+			shouldWelcomeFail:     true,
+			expectedUnlistings:    0,
+			shouldUnlistFail:      true,
+			expectedRegistrations: 0,
+			shouldRegisterFail:    false,
+			expectedReplies:       0,
+			shouldReplyFail:       false,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -226,7 +282,8 @@ func Test_POSTCallback(t *testing.T) {
 			unlS := u.NewMockService[s.GroupDto](tc.shouldUnlistFail)
 			regS := u.NewMockService[s.GroupDto](tc.shouldRegisterFail, tc.registerFailError)
 			repS := u.NewMockService[s.GroupDto](tc.shouldReplyFail)
-			sCtx := &s.ServiceContext{UnlistService: unlS, RegistrationService: regS, ReplyService: repS}
+			welS := u.NewMockService[s.GroupDto](tc.shouldWelcomeFail)
+			sCtx := &s.ServiceContext{UnlistService: unlS, RegistrationService: regS, ReplyService: repS, WelcomeService: welS}
 
 			suite := u.NewRoutesTestSuite()
 			routes.AddRoutes(suite.Router, u.StubSecret, sCtx)
@@ -251,6 +308,7 @@ func Test_POSTCallback(t *testing.T) {
 			suite.Router.ServeHTTP(rr, req)
 
 			u.AssertHttpStatus(t)(rr, tc.expectStatus)
+			assert.Equal(t, tc.expectedWelcomes, welS.CalledTimes(), "Unexpected number of welcomes triggered")
 			assert.Equal(t, tc.expectedUnlistings, unlS.CalledTimes(), "Unexpected number of unlistings triggered")
 			assert.Equal(t, tc.expectedRegistrations, regS.CalledTimes(), "Unexpected number of registrations triggered")
 			assert.Equal(t, tc.expectedReplies, repS.CalledTimes(), "Unexpected number of replies triggered")
