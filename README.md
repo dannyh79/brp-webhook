@@ -21,3 +21,14 @@ cp config.toml.example config.toml
 # Start server; this exposes endpoints like POST localhost:8080/api/v1/callback
 make
 ```
+
+## Building
+
+### Prereqs
+
+- podman, or docker
+
+```sh
+podman build --file Dockerfile.linux.amd64 -t brp-webhook:linux-amd64 .
+podman run --rm brp-webhook:linux-amd64 cat /app/bin/app > bin/app && chmod +x bin/app
+```
