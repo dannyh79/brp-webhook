@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// FIXME: Use LINE SDK's discriminated union event types here
 type LineCallbackBody struct {
 	Events []Event `json:"events"`
 }
@@ -27,6 +28,7 @@ type Source struct {
 	UserId  string `json:"userId"`
 }
 
+// https://developers.line.biz/en/reference/messaging-api/#message-event
 type MessageEvent struct {
 	Event   `json:",inline"`
 	Text    string           `json:"text"`
@@ -38,10 +40,12 @@ type MessageEventBody struct {
 	Text string `json:"text"`
 }
 
+// https://developers.line.biz/en/reference/messaging-api/#join-event
 type JoinEvent struct {
 	Event `json:",inline"`
 }
 
+// https://developers.line.biz/en/reference/messaging-api/#leave-event
 type LeaveEvent struct {
 	Event `json:",inline"`
 }
