@@ -38,6 +38,10 @@ type MessageEventBody struct {
 	Text string `json:"text"`
 }
 
+type JoinEvent struct {
+	Event `json:",inline"`
+}
+
 type LeaveEvent struct {
 	Event `json:",inline"`
 }
