@@ -62,14 +62,14 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       0,
 		},
 		{
-			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group`,
+			name:         `Returns 200 when receiving "我需要好好靈修" text message event from a group`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
 				"events": []map[string]interface{}{
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text": "請好好靈修每日推播靈修內容到這",
+							"text": "我需要好好靈修",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
@@ -83,14 +83,14 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       1,
 		},
 		{
-			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event & leave event from groups`,
+			name:         `Returns 200 when receiving "我需要好好靈修" text message event & leave event from groups`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
 				"events": []map[string]interface{}{
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text": "請好好靈修每日推播靈修內容到這",
+							"text": "我需要好好靈修",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
@@ -110,14 +110,14 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       1,
 		},
 		{
-			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - registration failed from having existing record`,
+			name:         `Returns 200 when receiving "我需要好好靈修" text message event from a group - registration failed from having existing record`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
 				"events": []map[string]interface{}{
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text": "請好好靈修每日推播靈修內容到這",
+							"text": "我需要好好靈修",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
@@ -133,14 +133,14 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       1,
 		},
 		{
-			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - registration failed for any other reason`,
+			name:         `Returns 200 when receiving "我需要好好靈修" text message event from a group - registration failed for any other reason`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
 				"events": []map[string]interface{}{
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text": "請好好靈修每日推播靈修內容到這",
+							"text": "我需要好好靈修",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",
@@ -155,14 +155,14 @@ func Test_POSTCallback(t *testing.T) {
 			expectedReplies:       0,
 		},
 		{
-			name:         `Returns 200 when receiving "請好好靈修每日推播靈修內容到這" text message event from a group - reply failed`,
+			name:         `Returns 200 when receiving "我需要好好靈修" text message event from a group - reply failed`,
 			expectStatus: http.StatusOK,
 			reqBody: map[string]interface{}{
 				"events": []map[string]interface{}{
 					{
 						"type": "message",
 						"message": map[string]interface{}{
-							"text": "請好好靈修每日推播靈修內容到這",
+							"text": "我需要好好靈修",
 						},
 						"source": map[string]interface{}{
 							"groupId": "C1234",

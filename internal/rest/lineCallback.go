@@ -42,7 +42,7 @@ type LeaveEvent struct {
 	Event `json:",inline"`
 }
 
-const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
+const RegisterMyGroupMsg = "我需要好好靈修"
 
 func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
