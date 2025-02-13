@@ -9,26 +9,22 @@ import (
 	"github.com/dannyh79/brp-webhook/internal/sentry"
 )
 
-var _ Service[GroupDto] = (*ReplyService)(nil)
+var _ Service[GroupDto] = (*WelcomeService)(nil)
 
-type ReplyService struct {
+type WelcomeService struct {
 	token  string
 	client HttpDoer
 }
 
-func NewReplyService(token string, client *http.Client) Service[GroupDto] {
-	return &ReplyService{token: token, client: sentry.NewSentryHttpClient(client)}
+func NewWelcomeService(token string, client *http.Client) Service[GroupDto] {
+	return &WelcomeService{token: token, client: sentry.NewSentryHttpClient(client)}
 }
 
-func (s *ReplyService) Execute(g *GroupDto) error {
-	m := msgOk
-	if g.WasRegistered {
-		m = msgAlreadyRegistered
-	}
+func (s *WelcomeService) Execute(g *GroupDto) error {
 	p := ReplyMessageRequest{
 		ReplyToken: g.ReplyToken,
 		Messages: []message{
-			{Type: "text", Text: m},
+			{Type: "text", Text: msgWelcome},
 		},
 	}
 
@@ -39,7 +35,7 @@ func (s *ReplyService) Execute(g *GroupDto) error {
 
 	req, err := http.NewRequest("POST", lineReplyApiEndpoint, bytes.NewBuffer(b))
 	if err != nil {
-		return fmt.Errorf("failed to create reply request: %w", err)
+		return fmt.Errorf("failed to create welcome request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -47,13 +43,13 @@ func (s *ReplyService) Execute(g *GroupDto) error {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send reply request: %w", err)
+		return fmt.Errorf("failed to send welcome request: %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code from replying: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code from welcoming: %d", resp.StatusCode)
 	}
 
 	return nil

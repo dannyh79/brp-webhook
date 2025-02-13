@@ -50,6 +50,7 @@ func main() {
 		s.NewUnlistService(repo),
 		s.NewRegistrationService(repo),
 		s.NewReplyService(cfg.LineChannelAccessToken, httpClient),
+		s.NewWelcomeService(cfg.LineChannelAccessToken, httpClient),
 	)
 
 	gin.SetMode(gin.ReleaseMode)
