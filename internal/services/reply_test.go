@@ -33,7 +33,7 @@ func Test_ReplyService(t *testing.T) {
 		{
 			name:               "Replies with MsgAlreadyRegistered for existing registration",
 			dto:                s.GroupDto{ReplyToken: "test-reply-token", WasRegistered: true},
-			expectedMsg:        "已在加入推播清單中。 :D",
+			expectedMsg:        "你已在推播清單中。 :D",
 			replyToken:         "test-reply-token",
 			mockRespStatusCode: http.StatusOK,
 			expectError:        false,
