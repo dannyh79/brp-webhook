@@ -42,8 +42,6 @@ type LeaveEvent struct {
 	Event `json:",inline"`
 }
 
-const RegisterMyGroupMsg = "我需要好好靈修"
-
 func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		sentry.TagBy(ctx, "lineEventsHandler")
@@ -74,7 +72,7 @@ func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 }
 
 func handleMessageEvent(sCtx *s.ServiceContext, e Event) {
-	if e.Message.Text != RegisterMyGroupMsg || len(e.ReplyToken) == 0 {
+	if e.Message.Text != g.MsgRegisterMyGroup || len(e.ReplyToken) == 0 {
 		return
 	}
 

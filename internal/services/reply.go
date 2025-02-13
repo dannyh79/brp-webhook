@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	g "github.com/dannyh79/brp-webhook/internal/groups"
 	"github.com/dannyh79/brp-webhook/internal/sentry"
 )
 
@@ -13,8 +14,8 @@ var _ Service[GroupDto] = (*ReplyService)(nil)
 
 const lineReplyApiEndpoint = "https://api.line.me/v2/bot/message/reply"
 
-const msgOk = "已加入推播清單。"
-const msgAlreadyRegistered = "已在加入推播清單中。 :D"
+const msgOk = g.MsgRegistrationOk
+const msgAlreadyRegistered = g.MsgAlreadyRegistered
 
 type ReplyMessageRequest struct {
 	ReplyToken string    `json:"replyToken"`
