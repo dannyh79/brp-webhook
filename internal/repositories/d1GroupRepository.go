@@ -9,6 +9,7 @@ import (
 	"path"
 
 	g "github.com/dannyh79/brp-webhook/internal/groups"
+	"github.com/dannyh79/brp-webhook/internal/sentry"
 )
 
 var _ Repository[g.Group] = (*D1GroupRepository)(nil)
@@ -25,7 +26,7 @@ type SaveGroupParams struct {
 type D1GroupRepository struct {
 	endpoint
 	token
-	client *http.Client
+	client HttpDoer
 }
 
 func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
@@ -104,5 +105,5 @@ func (r *D1GroupRepository) buildReqUrl(id string) (string, error) {
 }
 
 func NewD1GroupRepository(u endpoint, t token, c *http.Client) *D1GroupRepository {
-	return &D1GroupRepository{endpoint: u, token: t, client: c}
+	return &D1GroupRepository{endpoint: u, token: t, client: sentry.NewSentryHttpClient(c)}
 }

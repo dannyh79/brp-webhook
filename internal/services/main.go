@@ -1,6 +1,14 @@
 package services
 
-import g "github.com/dannyh79/brp-webhook/internal/groups"
+import (
+	"net/http"
+
+	g "github.com/dannyh79/brp-webhook/internal/groups"
+)
+
+type HttpDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type Service[T any] interface {
 	Execute(*T) error

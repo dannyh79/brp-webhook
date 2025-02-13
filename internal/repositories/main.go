@@ -1,6 +1,13 @@
 package repositories
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
+
+type HttpDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type Repository[T any] interface {
 	Save(*T) (*T, error)

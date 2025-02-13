@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"io"
 
+	"github.com/dannyh79/brp-webhook/internal/sentry"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,6 +15,8 @@ type channelSecret = string
 
 func LineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		sentry.TagBy(ctx, "LineAuthMiddleware")
+
 		if ctx.Request.ContentLength == 0 {
 			ctx.AbortWithStatus(400)
 			return
