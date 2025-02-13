@@ -4,6 +4,7 @@ import (
 	"log"
 
 	g "github.com/dannyh79/brp-webhook/internal/groups"
+	"github.com/dannyh79/brp-webhook/internal/sentry"
 	s "github.com/dannyh79/brp-webhook/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -45,6 +46,8 @@ const RegisterMyGroupMsg = "請好好靈修每日推播靈修內容到這"
 
 func lineEventsHandler(sCtx *s.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		sentry.TagBy(ctx, "lineEventsHandler")
+
 		var b LineCallbackBody
 		if err := ctx.ShouldBindJSON(&b); err != nil {
 			log.Printf("Error in unmarshalling request body: %v", err)
