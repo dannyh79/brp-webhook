@@ -30,3 +30,20 @@ make
 ```sh
 make build-linux-amd64
 ```
+
+## Developing
+
+```sh
+asdf install
+
+cp config.toml.example config.toml
+# Then update the values in config.toml to your needs
+
+make pre-flight
+
+# Available commands
+make run
+make fmt
+make lint
+make test
+```
