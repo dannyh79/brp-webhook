@@ -1,5 +1,5 @@
 .PHONY: all
-all: flight-check build run-build
+all: build run-build
 
 .PHONY: run
 run: flight-check
@@ -7,17 +7,17 @@ run: flight-check
 	@PORT=$${PORT:-8080} go run main.go
 
 .PHONY: build
-build: flight-check
+build:
 	@echo "Building the app..."
 	@mkdir -p bin
 	@go build -o bin/app
 
 .PHONY: run-build
-run-build: flight-check
+run-build:
 	@echo "Running ./bin/app on port $${PORT:-8080}..."
 	@PORT=$${PORT:-8080} ./bin/app
 
-.PHONY:  test
+.PHONY: test
 test: flight-check
 	@echo "Running tests..."
 	@go test -race -cover ./...
