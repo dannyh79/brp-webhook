@@ -28,15 +28,20 @@ build-linux-amd64:
 	@chmod +x bin/app_linux_amd64
 #endregion
 
-.PHONY: test
-test: flight-check
-	@echo "Running tests..."
-	@go test -race -cover ./...
+.PHONY: fmt
+fmt: flight-check
+	@echo "Formatting Go files..."
+	@go fmt ./...
 
 .PHONY: lint
 lint: flight-check
 	@echo "Running golangci-lint..."
 	@./bin/golangci-lint run
+
+.PHONY: test
+test: flight-check
+	@echo "Running tests..."
+	@go test -race -cover ./...
 
 .PHONY: clean
 clean: flight-check
