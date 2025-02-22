@@ -17,6 +17,17 @@ run-build:
 	@echo "Running ./bin/app on port $${PORT:-8080}..."
 	@PORT=$${PORT:-8080} ./bin/app
 
+#region build-linux-amd64
+PODMAN := $(shell if command -v podman >/dev/null 2>&1; then echo podman; else echo docker; fi)
+
+build-linux-amd64:
+	@echo "Building the app for Linux AMD64..."
+	@if [ "$(PODMAN)" = "docker" ]; then echo "Podman not found, falling back to Docker"; fi
+	@$(PODMAN) build --file Dockerfile.linux.amd64 -t brp-webhook:linux-amd64 .
+	@$(PODMAN) run --rm brp-webhook:linux-amd64 cat /app/bin/app > bin/app_linux_amd64
+	@chmod +x bin/app_linux_amd64
+#endregion
+
 .PHONY: test
 test: flight-check
 	@echo "Running tests..."

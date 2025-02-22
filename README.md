@@ -21,13 +21,12 @@ cp config.toml.example config.toml
 make
 ```
 
-## Building
+## Building for Linux AMD64 Platform
 
 ### Prereqs
 
 - podman, or docker
 
 ```sh
-podman build --file Dockerfile.linux.amd64 -t brp-webhook:linux-amd64 .
-podman run --rm brp-webhook:linux-amd64 cat /app/bin/app > bin/app && chmod +x bin/app
+make build-linux-amd64
 ```
