@@ -70,7 +70,7 @@ func validateConfig(cfg config, printEnv bool) []errorMsg {
 	t := reflect.TypeOf(cfg)
 
 	var errs []string
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		k := t.Field(i).Name
 		v := v.Field(i)
 
