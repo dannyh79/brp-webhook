@@ -54,7 +54,7 @@ pre-flight:
 	@echo "Setting up Git hooks..."
 	@mkdir -p bin
 	@echo "Installing golangci-lint to ./bin..."
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./bin v1.63.4
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./bin v2.7.2
 	@cp scripts/git/pre-commit .git/hooks/pre-commit
 	@cp scripts/git/pre-push .git/hooks/pre-push
 	@chmod +x .git/hooks/pre-commit .git/hooks/pre-push
