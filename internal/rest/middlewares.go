@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"io"
+	"log"
 
 	"github.com/dannyh79/brp-webhook/internal/sentry"
 	"github.com/gin-gonic/gin"
@@ -22,7 +23,12 @@ func LineAuthMiddleware(s channelSecret) gin.HandlerFunc {
 			return
 		}
 
-		defer ctx.Request.Body.Close()
+		defer func() {
+			err := ctx.Request.Body.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
 
 		body, err := io.ReadAll(ctx.Request.Body)
 		if err != nil || len(body) == 0 {

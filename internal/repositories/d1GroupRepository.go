@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -48,7 +49,12 @@ func (r *D1GroupRepository) Save(g *g.Group) (*g.Group, error) {
 		return nil, fmt.Errorf("failed to send save request: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	switch resp.StatusCode {
 	case http.StatusNoContent:
@@ -78,7 +84,12 @@ func (r *D1GroupRepository) Destroy(g *g.Group) error {
 		return fmt.Errorf("failed to send destroy request: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	switch resp.StatusCode {
 	case http.StatusNoContent:

@@ -26,4 +26,4 @@ func NewRegistrationService(r r.Repository[g.Group]) Service[GroupDto] {
 }
 
 // Group already registered.
-var ErrorGroupAlreadyRegistered = errors.New("Group already registered")
+var ErrorGroupAlreadyRegistered = errors.New("group already registered")

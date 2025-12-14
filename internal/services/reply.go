@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/dannyh79/brp-webhook/internal/sentry"
@@ -50,7 +51,12 @@ func (s *ReplyService) Execute(g *GroupDto) error {
 		return fmt.Errorf("failed to send reply request: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code from replying: %d", resp.StatusCode)

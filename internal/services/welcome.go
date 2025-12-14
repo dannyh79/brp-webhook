@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/dannyh79/brp-webhook/internal/sentry"
@@ -46,7 +47,12 @@ func (s *WelcomeService) Execute(g *GroupDto) error {
 		return fmt.Errorf("failed to send welcome request: %w", err)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code from welcoming: %d", resp.StatusCode)

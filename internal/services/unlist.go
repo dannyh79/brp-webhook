@@ -26,4 +26,4 @@ func NewUnlistService(r r.Repository[g.Group]) Service[GroupDto] {
 }
 
 // Group not found.
-var ErrorGroupNotFound = errors.New("Group not found")
+var ErrorGroupNotFound = errors.New("group not found")
